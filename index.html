@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuTrack - Lost & Found Documents Management System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-navy: #1a365d;
+            --secondary-teal: #0d9488;
+            --accent-gold: #d97706;
+            --bg-light: #f8fafc;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: #334155;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar-custom {
+            background-color: var(--primary-navy);
+        }
+        .navbar-custom .navbar-brand, .navbar-custom .nav-link {
+            color: #ffffff;
+        }
+        .navbar-custom .nav-link:hover {
+            color: #cbd5e1;
+        }
+        .btn-navy {
+            background-color: var(--primary-navy);
+            color: white;
+            border: 1px solid var(--primary-navy);
+        }
+        .btn-navy:hover {
+            background-color: #0f172a;
+            color: white;
+            border-color: #0f172a;
+        }
+        .btn-teal {
+            background-color: var(--secondary-teal);
+            color: white;
+            border: 1px solid var(--secondary-teal);
+        }
+        .btn-teal:hover {
+            background-color: #0f766e;
+            color: white;
+            border-color: #0f766e;
+        }
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-navy) 0%, #2e5984 100%);
+            color: white;
+            padding: 4rem 1rem;
+            border-radius: 0 0 15px 15px;
+        }
+        .page-view {
+            display: none;
+        }
+        .page-view.active {
+            display: block;
+        }
+        .footer-custom {
+            margin-top: auto;
+            background-color: var(--primary-navy);
+            color: white;
+            padding: 1.5rem 0;
+        }
+        #cameraVideo, #capturedCanvas {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            background-color: #000;
+        }
+        .badge-notification {
+            font-size: 0.75rem;
+            position: relative;
+            top: -8px;
+        }
+        .extension-card {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#" onclick="navigateTo('landingPage')">
+                <i class="fa-solid fa-file-invoice me-2"></i>DocuTrack
+            </a>
+            
+            <!-- Language Switcher Option (English / French) -->
+            <div class="d-flex align-items-center ms-auto me-3">
+                <i class="fa-solid fa-globe text-white me-2"></i>
+                <select id="langSelect" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="toggleLanguage(this.value)" style="width: auto;">
+                    <option value="en" selected>English</option>
+                    <option value="fr">Français</option>
+                </select>
+            </div>
+
+            <button class="navbar-toggler navbar-dark" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-menu navbar-nav ms-auto" id="navLinks">
+                    <!-- Dynamic Nav items generated via JS -->
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- CONTENT CONTAINER -->
+    <main class="container my-4">
+
+        <!-- 1. LANDING PAGE -->
+        <section id="landingPage" class="page-view active">
+            <div class="hero-section text-center mb-4">
+                <h1 class="display-4 fw-bold" data-i18n="heroTitle">Lost & Found Documents System</h1>
+                <p class="lead" data-i18n="heroDesc">A secure, official registry for reporting, searching, and recovering lost national identification and legal documents in Cameroon.</p>
+                <div class="mt-4">
+                    <button class="btn btn-teal btn-lg me-2" onclick="navigateTo('registerPage')"><i class="fa-solid fa-user-plus me-1"></i> <span data-i18n="btnRegister">Register Account</span></button>
+                    <button class="btn btn-outline-light btn-lg" onclick="navigateTo('loginPage')"><i class="fa-solid fa-right-to-bracket me-1"></i> <span data-i18n="btnLogin">Login</span></button>
+                </div>
+            </div>
+            <div class="row text-center mt-5">
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm p-3">
+                        <i class="fa-solid fa-camera-retro fa-3x text-teal mb-3" style="color: var(--secondary-teal);"></i>
+                        <h5 data-i18n="step1Title">1. Finder Reports</h5>
+                        <p class="text-muted" data-i18n="step1Desc">Found a document? Snap a quick photo using your web camera and securely submit deposit details.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm p-3">
+                        <i class="fa-solid fa-magnifying-glass fa-3x mb-3" style="color: var(--primary-navy);"></i>
+                        <h5 data-i18n="step2Title">2. Owner Searches</h5>
+                        <p class="text-muted" data-i18n="step2Desc">Search through reported documents with our smart, fuzzy-name matching registry engine.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm p-3">
+                        <i class="fa-solid fa-hand-holding-hand fa-3x mb-3" style="color: var(--accent-gold);"></i>
+                        <h5 data-i18n="step3Title">3. Secure Recovery</h5>
+                        <p class="text-muted" data-i18n="step3Desc">Pay a small processing fee via Mobile Money or Card to access exact pickup locations.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. REGISTER PAGE -->
+        <section id="registerPage" class="page-view">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <div class="card shadow-sm">
+                        <div class="card-header btn-navy text-white fw-bold" data-i18n="regTitle">Create a User Account</div>
+                        <div class="card-body">
+                            <form id="registerForm" onsubmit="handleRegister(event)">
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblFullName">Full Name</label>
+                                    <input type="text" class="form-control" id="regName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblEmail">Email Address</label>
+                                    <input type="email" class="form-control" id="regEmail" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblPhone">Phone Number</label>
+                                    <input type="tel" class="form-control" id="regPhone" placeholder="+237..." required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblPassword">Password</label>
+                                    <input type="password" class="form-control" id="regPass" required>
+                                </div>
+                                <button type="submit" class="btn btn-teal w-100" data-i18n="btnCreateAccount">Create Account</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. AUTHENTICATE (LOGIN) PAGE -->
+        <section id="loginPage" class="page-view">
+            <div class="row justify-content-center">
+                <div class="col-md-5">
+                    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <div class="card shadow-sm">
+                        <div class="card-header btn-navy text-white fw-bold" data-i18n="authTitle">Login</div>
+                        <div class="card-body">
+                            <div id="loginAlert"></div>
+                            <form onsubmit="handleLogin(event)">
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblUserOrEmail">Email or Username</label>
+                                    <input type="text" class="form-control" id="loginUser" value="john@example.com" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblPassword">Password</label>
+                                    <input type="password" class="form-control" id="loginPass" value="password" required>
+                                </div>
+                                <button type="submit" class="btn btn-navy w-100" data-i18n="btnAuthenticate">Submit</button>
+                            </form>
+                            <hr>
+                            <small class="text-muted"><span data-i18n="demoAccounts">Demo Accounts:</span><br>
+                            - Regular User: <b>john@example.com</b><br>
+                            - Administrator: <b>admin@docutrack.cm</b></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD (ROLE SELECTOR) -->
+        <section id="roleDashboardPage" class="page-view">
+            <div class="text-center mb-4">
+                <h2><span data-i18n="txtWelcome">Welcome</span>, <span id="userDisplayName">User</span>!</h2>
+                <p class="text-muted" data-i18n="txtRoleSub">Select an action flow depending on what you want to perform today.</p>
+            </div>
+            <div class="row justify-content-center g-4">
+                <div class="col-md-5">
+                    <div class="card h-100 text-center shadow-sm p-4 border-teal">
+                        <i class="fa-solid fa-hand-holding-box fa-4x text-teal mb-3" style="color: var(--secondary-teal);"></i>
+                        <h4 data-i18n="txtFoundDocQ">Found a Document?</h4>
+                        <p class="text-muted" data-i18n="txtFoundDocSub">Report an item you picked up and help return it to its owner.</p>
+                        <button class="btn btn-teal mt-auto" onclick="navigateTo('finderDashboard')" data-i18n="btnContFinder">Continue as Finder</button>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="card h-100 text-center shadow-sm p-4">
+                        <i class="fa-solid fa-id-card-clip fa-4x mb-3" style="color: var(--primary-navy);"></i>
+                        <h4 data-i18n="txtLostDocQ">Lost a Document?</h4>
+                        <p class="text-muted" data-i18n="txtLostDocSub">Search our live database or submit a missing document declaration.</p>
+                        <button class="btn btn-navy mt-auto" onclick="navigateTo('ownerDashboard')" data-i18n="btnContOwner">Continue as Owner</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. FEEDBACK PAGE -->
+        <section id="feedbackPage" class="page-view">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <div class="card shadow-sm">
+                        <div class="card-header btn-navy text-white fw-bold" data-i18n="fbSubmitHeader">Make Feedback</div>
+                        <div class="card-body">
+                            <div id="feedbackAlert"></div>
+                            <form onsubmit="handleFeedbackSubmit(event)">
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblSubject">Subject</label>
+                                    <input type="text" class="form-control" id="fbSubject" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblRating">Rating</label>
+                                    <select class="form-select" id="fbRating">
+                                        <option value="5">5 - Excellent</option>
+                                        <option value="4">4 - Very Good</option>
+                                        <option value="3">3 - Average</option>
+                                        <option value="2">2 - Poor</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblMessage">Message</label>
+                                    <textarea class="form-control" id="fbMessage" rows="4" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-teal w-100" data-i18n="btnSubmitFeedback">Submit Feedback</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FINDER FLOW -->
+        <section id="finderDashboard" class="page-view">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-secondary me-2" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <h3 class="mb-0" data-i18n="finderPortalTitle">Finder Control Portal</h3>
+                </div>
+                <button class="btn btn-outline-secondary" onclick="navigateTo('roleDashboardPage')" data-i18n="btnSwitchRole">Switch Role</button>
+            </div>
+            <div class="card p-4 shadow-sm">
+                <h5 data-i18n="txtRepFoundHeader">Report a Found Document</h5>
+                <p class="text-muted" data-i18n="txtRepFoundSub">Input essential details and document photos before saving to the database.</p>
+                <div>
+                    <button class="btn btn-teal" onclick="navigateTo('reportFoundPage')"><i class="fa-solid fa-plus me-1"></i> <span data-i18n="btnReportFound">Report Found Document</span></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- REPORT FOUND DOCUMENT PAGE -->
+        <section id="reportFoundPage" class="page-view">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <div class="card shadow-sm">
+                        <div class="card-header btn-navy text-white fw-bold" data-i18n="btnReportFound">
+                            Report Found Document
+                        </div>
+                        <div class="card-body">
+                            <div id="reportAlert"></div>
+                            <form onsubmit="handleReportSubmit(event)">
+
+                                <!-- Document Details -->
+                                <div class="extension-card">
+                                    <h6 class="text-navy fw-bold mb-3"><i class="fa-solid fa-id-card text-teal me-2"></i><span data-i18n="cardDocDetails">Document Details</span></h6>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" data-i18n="lblDocType">Document Type</label>
+                                            <select class="form-select" id="repType" required>
+                                                <!-- Category list populated dynamically via JS -->
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label" data-i18n="lblOwnerName">Owner's Name (As printed)</label>
+                                            <input type="text" class="form-control" id="repName" placeholder="e.g. Samuel Eto'o" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label"><span data-i18n="lblDocNum">Document Number</span> <span class="text-muted fw-normal" data-i18n="lblOptional">(Optional)</span></label>
+                                        <input type="text" class="form-control" id="repNumber" placeholder="e.g. 102938475 (Optional)">
+                                    </div>
+                                </div>
+
+                                <!-- Found Location -->
+                                <div class="extension-card">
+                                    <h6 class="text-navy fw-bold mb-3"><i class="fa-solid fa-location-dot text-teal me-2"></i><span data-i18n="cardFoundLoc">Found Location</span></h6>
+                                    <div class="mb-2">
+                                        <label class="form-label" data-i18n="lblLocCity">Physical Location / City / Landmark</label>
+                                        <input type="text" class="form-control" id="repLocation" placeholder="e.g. Yaoundé Central Station" required>
+                                    </div>
+                                </div>
+
+                                <!-- Collection Point -->
+                                <div class="extension-card">
+                                    <h6 class="text-navy fw-bold mb-3"><i class="fa-solid fa-building-columns text-teal me-2"></i><span data-i18n="cardCollectPt">Collection Point</span></h6>
+                                    <div class="mb-2">
+                                        <label class="form-label" data-i18n="lblDropOff">Drop-off / Safe Deposit Point</label>
+                                        <input type="text" class="form-control" id="repDeposit" placeholder="e.g. Police Station 1st District, Yaoundé" required>
+                                    </div>
+                                </div>
+
+                                <!-- Context Details -->
+                                <div class="extension-card">
+                                    <h6 class="text-navy fw-bold mb-3"><i class="fa-solid fa-note-sticky text-teal me-2"></i><span data-i18n="cardCtxDetails">Context Details</span></h6>
+                                    <div class="mb-2">
+                                        <label class="form-label" data-i18n="lblAddNotes">Additional Discovery Context Notes</label>
+                                        <textarea class="form-control" id="repContext" rows="2" placeholder="e.g. Found inside a wallet near the ticket counter..."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Capture Image -->
+                                <div class="extension-card text-center">
+                                    <h6 class="text-navy fw-bold mb-3 text-start"><i class="fa-solid fa-camera text-teal me-2"></i><span data-i18n="cardCapImg">Capture Image</span></h6>
+                                    <p class="small text-muted mb-2" data-i18n="txtCamNote">Note: Live camera stream capture required. File uploading is disabled.</p>
+                                    
+                                    <video id="cameraVideo" autoplay playsinline class="d-none mb-2"></video>
+                                    <canvas id="capturedCanvas" class="d-none mb-2"></canvas>
+                                    
+                                    <div id="cameraControls">
+                                        <button type="button" class="btn btn-outline-navy btn-sm me-2" onclick="startCamera()"><i class="fa-solid fa-camera me-1"></i> <span data-i18n="btnStartCam">Start Web Camera</span></button>
+                                        <button type="button" class="btn btn-teal btn-sm d-none" id="snapBtn" onclick="captureSnapshot()"><i class="fa-solid fa-circle-dot me-1"></i> <span data-i18n="btnCapImg">Capture Image</span></button>
+                                    </div>
+                                    <input type="hidden" id="cameraImageData" required>
+                                </div>
+
+                                <button type="submit" class="btn btn-navy w-100 py-2 fs-6 mt-2" data-i18n="btnSubmit">Submit</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- OWNER FLOW -->
+        <section id="ownerDashboard" class="page-view">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm btn-outline-secondary me-2" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <h3 class="mb-0" data-i18n="ownerPortalTitle">Owner Control Portal</h3>
+                </div>
+                <button class="btn btn-outline-secondary" onclick="navigateTo('roleDashboardPage')" data-i18n="btnSwitchRole">Switch Role</button>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card p-4 shadow-sm h-100">
+                        <h5 data-i18n="txtSearchLostTitle">Search Lost Document</h5>
+                        <p class="text-muted" data-i18n="txtSearchLostSub">Check our existing database of reported found documents using smart lookup.</p>
+                        <button class="btn btn-navy mt-auto" onclick="navigateTo('searchPage')"><i class="fa-solid fa-magnifying-glass me-1"></i> <span data-i18n="btnSearch">Search</span></button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card p-4 shadow-sm h-100">
+                        <h5 data-i18n="txtDeclLostTitle">Declare Lost Document</h5>
+                        <p class="text-muted" data-i18n="txtDeclLostSub">If your document isn't found yet, declare it lost to automatically get notified once a match is uploaded.</p>
+                        <button class="btn btn-teal mt-auto" onclick="navigateTo('declareLostPage')"><i class="fa-solid fa-bullhorn me-1"></i> <span data-i18n="btnDeclare">Declare</span></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEARCH PAGE -->
+        <section id="searchPage" class="page-view">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <div class="card shadow-sm">
+                        <div class="card-header btn-navy text-white fw-bold" data-i18n="searchCardHeader">Search Lost Document Registry</div>
+                        <div class="card-body">
+                            <form onsubmit="handleSearchSubmit(event)">
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblDocType">Document Type</label>
+                                    <select class="form-select" id="searchType" required>
+                                        <!-- Dynamic categories populated via JS -->
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblOwnerName">Owner's Name</label>
+                                    <input type="text" class="form-control" id="searchName" placeholder="e.g. Samuel Etoo" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label"><span data-i18n="lblDocNum">Document Number</span> <span class="text-muted fw-normal" data-i18n="lblOptional">(Optional)</span></label>
+                                    <input type="text" class="form-control" id="searchNumber" placeholder="e.g. 102938475 (Optional)">
+                                </div>
+                                <button type="submit" class="btn btn-teal w-100"><i class="fa-solid fa-magnifying-glass me-1"></i> <span data-i18n="btnSearch">Search</span></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MATCH FOUND PAGE -->
+        <section id="matchFoundPage" class="page-view">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <div class="card border-success shadow-sm">
+                        <div class="card-header bg-success text-white fw-bold">
+                            <i class="fa-solid fa-circle-check me-2"></i><span data-i18n="txtMatchTitle">Possible Match Identified!</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info" data-i18n="txtMatchInfo">
+                                Basic document info matched. Complete recovery information is hidden until service fee payment is verified.
+                            </div>
+                            <div id="matchSummary" class="mb-4">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <button class="btn btn-teal btn-lg w-100" onclick="navigateTo('payFeePage')">
+                                <i class="fa-solid fa-credit-card me-2"></i><span data-i18n="btnPayFee">Pay Service Fee</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NO MATCH FOUND PAGE -->
+        <section id="noMatchPage" class="page-view">
+            <div class="row justify-content-center">
+                <div class="col-md-6 text-center">
+                    <button class="btn btn-sm btn-outline-secondary mb-3 float-start" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <div class="clearfix"></div>
+                    <div class="card shadow-sm p-4">
+                        <i class="fa-solid fa-folder-open fa-4x text-muted mb-3"></i>
+                        <h4 data-i18n="txtNoMatchTitle">No Matching Document Found</h4>
+                        <p class="text-muted" data-i18n="txtNoMatchSub">We couldn't find any currently reported items matching your details. Would you like to declare this document as lost?</p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-teal" onclick="navigateTo('declareLostPage')" data-i18n="btnDeclare">Declare</button>
+                            <button class="btn btn-outline-secondary" onclick="navigateTo('searchPage')" data-i18n="btnTrySearch">Try Another Search</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAY SERVICE FEE PAGE -->
+        <section id="payFeePage" class="page-view">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <div class="card shadow-sm">
+                        <div class="card-header btn-navy text-white fw-bold" data-i18n="payFeeHeader">Pay Service Fee</div>
+                        <div class="card-body">
+                            <div class="mb-3 p-3 bg-light rounded d-flex justify-content-between align-items-center">
+                                <span data-i18n="txtFeeLabel">Recovery Processing Fee:</span>
+                                <span class="h4 mb-0 fw-bold text-navy">1,000 XAF</span>
+                            </div>
+                            <div id="paymentAlert"></div>
+                            <form onsubmit="handlePaymentSubmit(event)">
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblPayMethod">Payment Method</label>
+                                    <select class="form-select" id="payMethod" required>
+                                        <option value="MTN Mobile Money">MTN Mobile Money</option>
+                                        <option value="Orange Money">Orange Money</option>
+                                        <option value="Credit/Debit Card">Credit/Debit Card</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblAccNum">Phone / Account Number</label>
+                                    <input type="text" class="form-control" placeholder="6XXXXXXXX" required>
+                                </div>
+                                <button type="submit" class="btn btn-teal w-100" id="payBtn">
+                                    <i class="fa-solid fa-lock me-1"></i> <span data-i18n="btnConfirmPay">Confirm Payment via Payment API</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONSULT INFORMATION PAGE -->
+        <section id="consultPage" class="page-view">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <div class="card shadow-sm border-teal">
+                        <div class="card-header bg-teal text-white fw-bold">
+                            <i class="fa-solid fa-unlock me-2"></i><span data-i18n="consultCardHeader">Complete Recovery Information</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-success">
+                                <i class="fa-solid fa-circle-check me-2"></i> <span data-i18n="txtPayVerified">Payment status verified! Below are full details to recover your document.</span>
+                            </div>
+                            <div id="fullRecoveryDetails" class="p-3 bg-light rounded mb-3">
+                                <!-- Populated dynamically -->
+                            </div>
+                            <button class="btn btn-navy" onclick="navigateTo('ownerDashboard')" data-i18n="btnBackDash">Back to Dashboard</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DECLARE LOST DOCUMENT PAGE -->
+        <section id="declareLostPage" class="page-view">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <div class="card shadow-sm">
+                        <div class="card-header btn-navy text-white fw-bold" data-i18n="txtDeclLostTitle">Declare a Lost Document</div>
+                        <div class="card-body">
+                            <div id="declareAlert"></div>
+                            <form onsubmit="handleDeclareSubmit(event)">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label" data-i18n="lblDocType">Document Type</label>
+                                        <select class="form-select" id="decType" required>
+                                            <!-- Dynamic categories populated via JS -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label"><span data-i18n="lblDocNum">Document Number</span> <span class="text-muted fw-normal" data-i18n="lblOptional">(Optional)</span></label>
+                                        <input type="text" class="form-control" id="decNumber" placeholder="(Optional)">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblFullNameOnDoc">Full Name on Document</label>
+                                    <input type="text" class="form-control" id="decName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblLastLoc">Last Known Location</label>
+                                    <input type="text" class="form-control" id="decLocation" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" data-i18n="lblAddDesc">Additional Description</label>
+                                    <textarea class="form-control" id="decDesc" rows="3"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-navy w-100 py-2 fs-6"><i class="fa-solid fa-bullhorn me-1"></i> <span data-i18n="btnDeclare">Declare</span></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NOTIFICATIONS PAGE -->
+        <section id="notificationsPage" class="page-view">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <button class="btn btn-sm btn-outline-secondary mb-3" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                    <div class="card shadow-sm">
+                        <div class="card-header btn-navy text-white fw-bold d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-bell me-2"></i><span data-i18n="notifHeader">Owner Notifications</span></span>
+                        </div>
+                        <div class="card-body" id="notificationsContainer">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADMINISTRATOR PORTAL PAGE -->
+        <section id="adminDashboardPage" class="page-view">
+            <div class="d-flex align-items-center gap-2 mb-4">
+                <button class="btn btn-sm btn-outline-secondary" onclick="goBack()"><i class="fa-solid fa-arrow-left me-1"></i> <span data-i18n="btnBack">Back</span></button>
+                <h3 class="mb-0" data-i18n="adminPortalTitle">System Administration Portal</h3>
+            </div>
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="list-group shadow-sm">
+                        <button class="list-group-item list-group-item-action active" onclick="switchAdminTab('documentsTab', this)">
+                            <i class="fa-solid fa-folder-tree me-1"></i> <span data-i18n="tabDocHub">Manage Documents Hub</span>
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="switchAdminTab('usersTab', this)" data-i18n="tabUsers">Manage Users</button>
+                        <button class="list-group-item list-group-item-action" onclick="switchAdminTab('categoriesTab', this)" data-i18n="tabCategories">Manage Categories</button>
+                        <button class="list-group-item list-group-item-action" onclick="switchAdminTab('feedbackTab', this)" data-i18n="tabFeedback">Manage Feedback</button>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <div class="card shadow-sm p-3">
+
+                        <!-- Manage Documents Hub -->
+                        <div id="documentsTab" class="admin-tab-content">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5><i class="fa-solid fa-sliders me-2 text-teal"></i><span data-i18n="tabDocHub">Manage Documents Hub</span></h5>
+                                <span class="badge bg-secondary" data-i18n="badgeAuthReq">Requires Authenticate</span>
+                            </div>
+
+                            <ul class="nav nav-tabs mb-3" id="docSubTabs" role="tablist">
+                                <li class="nav-item">
+                                    <button class="nav-link active" id="sub-found-tab" data-bs-toggle="tab" data-bs-target="#sub-found" type="button"><i class="fa-solid fa-eye me-1"></i> <span data-i18n="subMonFound">Monitor Found Documents</span></button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" id="sub-decl-tab" data-bs-toggle="tab" data-bs-target="#sub-decl" type="button"><i class="fa-solid fa-clipboard-check me-1"></i> <span data-i18n="subMonDecl">Monitor Declarations</span></button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content" id="docSubTabsContent">
+                                <!-- Monitor Found Documents -->
+                                <div class="tab-pane fade show active" id="sub-found">
+                                    <div class="d-flex gap-2 mb-3">
+                                        <input type="text" class="form-control form-control-sm" placeholder="Filter by document # or owner..." id="adminFoundFilter" oninput="renderAdminTables()">
+                                        <select class="form-select form-select-sm w-auto" id="adminTypeFilter" onchange="renderAdminTables()">
+                                            <!-- Dynamically filled -->
+                                        </select>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th data-i18n="tblType">Type</th>
+                                                    <th data-i18n="tblOwner">Owner</th>
+                                                    <th data-i18n="tblDocNum">Doc #</th>
+                                                    <th data-i18n="tblDepLoc">Deposit Location</th>
+                                                    <th data-i18n="tblActions">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="adminDocsTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Monitor Declarations -->
+                                <div class="tab-pane fade" id="sub-decl">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th data-i18n="tblType">Type</th>
+                                                    <th data-i18n="tblClaimedOwner">Claimed Owner</th>
+                                                    <th data-i18n="tblDocNum">Doc #</th>
+                                                    <th data-i18n="tblLastKnownLoc">Last Known Location</th>
+                                                    <th data-i18n="tblActions">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="adminDeclarationsTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manage Users -->
+                        <div id="usersTab" class="admin-tab-content d-none">
+                            <h5 data-i18n="tabUsers">Manage Users</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th data-i18n="tblName">Name</th>
+                                            <th data-i18n="lblEmail">Email</th>
+                                            <th data-i18n="tblRole">Role</th>
+                                            <th data-i18n="tblActions">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminUsersTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Manage Categories -->
+                        <div id="categoriesTab" class="admin-tab-content d-none">
+                            <div class="d-flex justify-content-between mb-2">
+                                <h5 data-i18n="tabCategories">Manage Categories</h5>
+                                <button class="btn btn-sm btn-teal" onclick="addCategoryPrompt()" data-i18n="btnAddCategory">+ Add Category</button>
+                            </div>
+                            <ul class="list-group" id="adminCategoriesList"></ul>
+                        </div>
+
+                        <!-- Manage Feedback Console (Includes Authenticate prerequisite, Consult, Process, Remove Feedback) -->
+                        <div id="feedbackTab" class="admin-tab-content d-none">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="mb-0"><i class="fa-solid fa-comments text-teal me-2"></i><span data-i18n="manageFeedbackTitle">Manage Feedback Console</span></h5>
+                                    <small class="text-muted" data-i18n="txtFbUseCaseDesc">Primary Actor: Admin | Mandatory Prerequisite: Authenticate (&lt;&lt;Include&gt;&gt;)</small>
+                                </div>
+                                <span class="badge bg-success"><i class="fa-solid fa-shield-check me-1"></i> <span data-i18n="badgeAuthAdmin">Authenticated Admin</span></span>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th data-i18n="lblSubject">Subject</th>
+                                            <th data-i18n="lblRating">Rating</th>
+                                            <th data-i18n="tblStatus">Status</th>
+                                            <th data-i18n="tblActions">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminFeedbackTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- CONSULT FEEDBACK MODAL (<<Extend>> Consult Feedback) -->
+    <div class="modal fade" id="consultFeedbackModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-navy text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-eye me-2"></i><span data-i18n="modalConsultTitle">Consult Feedback</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="consultModalContent">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" data-i18n="btnClose">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROCESS FEEDBACK MODAL (<<Extend>> Process Feed) -->
+    <div class="modal fade" id="processFeedbackModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-teal text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-gears me-2"></i><span data-i18n="modalProcessTitle">Process Feedback Record</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="processFbId">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" data-i18n="lblUpdateStatus">Update Status</label>
+                        <select class="form-select" id="processStatusSelect">
+                            <option value="Pending">Pending</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Archived">Archived</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" data-i18n="lblAdminNotes">Admin Response / Note</label>
+                        <textarea class="form-control" id="processNotes" rows="3" placeholder="Enter administrative notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" data-i18n="btnCancel">Cancel</button>
+                    <button type="button" class="btn btn-teal btn-sm" onclick="saveProcessedFeedback()" data-i18n="btnSaveUpdate">Save & Update Record</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer-custom text-center">
+        <div class="container">
+            <small>&copy; 2026 DocuTrack Cameroon — Web-Based Lost & Found Documents Management System</small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Application Script -->
+    <script>
+        // DATA STATE / DATABASE SIMULATION
+        let currentUser = null;
+        let currentActiveMatch = null;
+        let navigationHistory = ['landingPage'];
+        let currentLang = 'en';
+
+        // COMPREHENSIVE TRANSLATION DICTIONARY (ENGLISH / FRENCH)
+        const translations = {
+            en: {
+                // Nav
+                navHome: "Home",
+                navFeedback: "Make Feedback",
+                navRegister: "Register",
+                navLogin: "Login",
+                navDashboard: "Dashboard",
+                navNotifications: "Notifications",
+                navAdmin: "Admin Portal",
+                navLogout: "Logout",
+                
+                // General UI
+                btnBack: "Back",
+                btnSubmit: "Submit",
+                btnSearch: "Search",
+                btnDeclare: "Declare",
+                btnClose: "Close",
+                btnCancel: "Cancel",
+                btnDelete: "Delete",
+                btnDeactivate: "Deactivate",
+                lblOptional: "(Optional)",
+                
+                // Landing
+                heroTitle: "Lost & Found Documents System",
+                heroDesc: "A secure, official registry for reporting, searching, and recovering lost national identification and legal documents in Cameroon.",
+                btnRegister: "Register Account",
+                btnLogin: "Login",
+                step1Title: "1. Finder Reports",
+                step1Desc: "Found a document? Snap a quick photo using your web camera and securely submit deposit details.",
+                step2Title: "2. Owner Searches",
+                step2Desc: "Search through reported documents with our smart, fuzzy-name matching registry engine.",
+                step3Title: "3. Secure Recovery",
+                step3Desc: "Pay a small processing fee via Mobile Money or Card to access exact pickup locations.",
+                
+                // Forms / Register / Login
+                regTitle: "Create a User Account",
+                authTitle: "User Authentication",
+                lblFullName: "Full Name",
+                lblEmail: "Email Address",
+                lblPhone: "Phone Number",
+                lblPassword: "Password",
+                btnCreateAccount: "Create Account",
+                lblUserOrEmail: "Email or Username",
+                btnAuthenticate: "Authenticate",
+                demoAccounts: "Demo Accounts:",
+
+                // Role Dashboard
+                txtWelcome: "Welcome",
+                txtRoleSub: "Select an action flow depending on what you want to perform today.",
+                txtFoundDocQ: "Found a Document?",
+                txtFoundDocSub: "Report an item you picked up and help return it to its owner.",
+                btnContFinder: "Continue as Finder",
+                txtLostDocQ: "Lost a Document?",
+                txtLostDocSub: "Search our live database or submit a missing document declaration.",
+                btnContOwner: "Continue as Owner",
+                btnSwitchRole: "Switch Role",
+
+                // Finder Portal / Report Found
+                finderPortalTitle: "Finder Control Portal",
+                txtRepFoundHeader: "Report a Found Document",
+                txtRepFoundSub: "Input essential details and document photos before saving to the database.",
+                btnReportFound: "Report Found Document",
+                cardDocDetails: "Document Details",
+                cardFoundLoc: "Found Location",
+                cardCollectPt: "Collection Point",
+                cardCtxDetails: "Context Details",
+                cardCapImg: "Capture Image",
+                lblDocType: "Document Type",
+                lblOwnerName: "Owner's Name (As printed)",
+                lblDocNum: "Document Number",
+                lblLocCity: "Physical Location / City / Landmark",
+                lblDropOff: "Drop-off / Safe Deposit Point",
+                lblAddNotes: "Additional Discovery Context Notes",
+                txtCamNote: "Note: Live camera stream capture required. File uploading is disabled.",
+                btnStartCam: "Start Web Camera",
+                btnCapImg: "Capture Image",
+
+                // Owner Portal / Search / Match
+                ownerPortalTitle: "Owner Control Portal",
+                txtSearchLostTitle: "Search Lost Document",
+                txtSearchLostSub: "Check our existing database of reported found documents using smart lookup.",
+                txtDeclLostTitle: "Declare Lost Document",
+                txtDeclLostSub: "If your document isn't found yet, declare it lost to automatically get notified once a match is uploaded.",
+                searchCardHeader: "Search Lost Document Registry",
+                txtMatchTitle: "Possible Match Identified!",
+                txtMatchInfo: "Basic document info matched. Complete recovery information is hidden until service fee payment is verified.",
+                btnPayFee: "Pay Service Fee",
+                txtNoMatchTitle: "No Matching Document Found",
+                txtNoMatchSub: "We couldn't find any currently reported items matching your details. Would you like to declare this document as lost?",
+                btnTrySearch: "Try Another Search",
+
+                // Pay Fee & Consult
+                payFeeHeader: "Pay Service Fee",
+                txtFeeLabel: "Recovery Processing Fee:",
+                lblPayMethod: "Payment Method",
+                lblAccNum: "Phone / Account Number",
+                btnConfirmPay: "Confirm Payment via Payment API",
+                consultCardHeader: "Complete Recovery Information",
+                txtPayVerified: "Payment status verified! Below are full details to recover your document.",
+                btnBackDash: "Back to Dashboard",
+
+                // Declare Lost
+                lblFullNameOnDoc: "Full Name on Document",
+                lblLastLoc: "Last Known Location",
+                lblAddDesc: "Additional Description",
+
+                // Feedback & Notifications
+                fbSubmitHeader: "Make Feedback",
+                lblSubject: "Subject",
+                lblRating: "Rating",
+                lblMessage: "Message",
+                btnSubmitFeedback: "Submit Feedback",
+                notifHeader: "Owner Notifications",
+
+                // Admin Console & Feedback Extension Use Case
+                adminPortalTitle: "System Administration Portal",
+                tabDocHub: "Manage Documents Hub",
+                tabUsers: "Manage Users",
+                tabCategories: "Manage Categories",
+                tabFeedback: "Manage Feedback",
+                badgeAuthReq: "Requires Authenticate",
+                subMonFound: "Monitor Found Documents",
+                subMonDecl: "Monitor Declarations",
+                tblType: "Type",
+                tblOwner: "Owner",
+                tblDocNum: "Doc #",
+                tblDepLoc: "Deposit Location",
+                tblActions: "Actions",
+                tblClaimedOwner: "Claimed Owner",
+                tblLastKnownLoc: "Last Known Location",
+                tblName: "Name",
+                tblRole: "Role",
+                btnAddCategory: "+ Add Category",
+                
+                manageFeedbackTitle: "Manage Feedback Console",
+                txtFbUseCaseDesc: "Primary Actor: Admin | Mandatory Prerequisite: Authenticate (<<Include>>)",
+                badgeAuthAdmin: "Authenticated Admin",
+                tblStatus: "Status",
+                btnConsult: "Consult Feedback",
+                btnProcess: "Process Feed",
+                btnRemove: "Remove Feedback",
+                modalConsultTitle: "Consult Feedback",
+                modalProcessTitle: "Process Feedback Record",
+                lblUpdateStatus: "Update Status",
+                lblAdminNotes: "Admin Response / Note",
+                btnSaveUpdate: "Save & Update Record"
+            },
+            fr: {
+                // Nav
+                navHome: "Accueil",
+                navFeedback: "Donner un Avis",
+                navRegister: "S'inscrire",
+                navLogin: "Connexion",
+                navDashboard: "Tableau de Bord",
+                navNotifications: "Notifications",
+                navAdmin: "Portail Admin",
+                navLogout: "Déconnexion",
+                
+                // General UI
+                btnBack: "Retour",
+                btnSubmit: "Soumettre",
+                btnSearch: "Rechercher",
+                btnDeclare: "Déclarer",
+                btnClose: "Fermer",
+                btnCancel: "Annuler",
+                btnDelete: "Supprimer",
+                btnDeactivate: "Désactiver",
+                lblOptional: "(Optionnel)",
+
+                // Landing
+                heroTitle: "Système de Gestion des Documents Perdus & Retrouvés",
+                heroDesc: "Un registre officiel et sécurisé pour déclarer, rechercher et récupérer les pièces d'identité et documents officiels au Cameroun.",
+                btnRegister: "Créer un Compte",
+                btnLogin: "Se Connecter",
+                step1Title: "1. Signaler un Objet Trouvé",
+                step1Desc: "Vous avez trouvé un document? Prenez une photo via votre caméra web et déposez les détails de consignation.",
+                step2Title: "2. Recherches des Propriétaires",
+                step2Desc: "Recherchez parmi les documents enregistrés grâce à notre moteur de recherche intelligent.",
+                step3Title: "3. Récupération Sécurisée",
+                step3Desc: "Payez de légers frais de traitement via Mobile Money ou Carte pour obtenir l'adresse exacte du dépôt.",
+
+                // Forms / Register / Login
+                regTitle: "Créer un Compte Utilisateur",
+                authTitle: "Authentification de l'Utilisateur",
+                lblFullName: "Nom Complet",
+                lblEmail: "Adresse Email",
+                lblPhone: "Numéro de Téléphone",
+                lblPassword: "Mot de Passe",
+                btnCreateAccount: "Créer un Compte",
+                lblUserOrEmail: "Email ou Nom d'utilisateur",
+                btnAuthenticate: "S'authentifier",
+                demoAccounts: "Comptes Démo :",
+
+                // Role Dashboard
+                txtWelcome: "Bienvenue",
+                txtRoleSub: "Sélectionnez le module d'action selon votre besoin du jour.",
+                txtFoundDocQ: "Vous avez trouvé un document ?",
+                txtFoundDocSub: "Signalez un document ramassé pour vous aider à le restituer à son propriétaire.",
+                btnContFinder: "Continuer comme Inventeur",
+                txtLostDocQ: "Vous avez perdu un document ?",
+                txtLostDocSub: "Recherchez dans notre base en direct ou publiez une déclaration de perte.",
+                btnContOwner: "Continuer comme Propriétaire",
+                btnSwitchRole: "Changer de Rôle",
+
+                // Finder Portal / Report Found
+                finderPortalTitle: "Portail de Contrôle de l'Inventeur",
+                txtRepFoundHeader: "Signaler un Document Trouvé",
+                txtRepFoundSub: "Renseignez les détails essentiels et capturez la photo du document.",
+                btnReportFound: "Signaler un Document Trouvé",
+                cardDocDetails: "Détails du Document",
+                cardFoundLoc: "Lieu de Découverte",
+                cardCollectPt: "Point de Dépot / Consignation",
+                cardCtxDetails: "Détails du Contexte",
+                cardCapImg: "Capture Photo",
+                lblDocType: "Type de Document",
+                lblOwnerName: "Nom du Propriétaire (Tel qu'imprimé)",
+                lblDocNum: "Numéro du Document",
+                lblLocCity: "Emplacement Physique / Ville / Repère",
+                lblDropOff: "Point de Dépôt / Poste Sécurisé",
+                lblAddNotes: "Notes Supplémentaires sur la Découverte",
+                txtCamNote: "Note : Capture via la caméra web obligatoire. Le téléchargement de fichiers est désactivé.",
+                btnStartCam: "Démarrer la Caméra",
+                btnCapImg: "Capturer la Photo",
+
+                // Owner Portal / Search / Match
+                ownerPortalTitle: "Portail de Contrôle du Propriétaire",
+                txtSearchLostTitle: "Rechercher un Document Perdu",
+                txtSearchLostSub: "Consultez notre base de données des objets signalés.",
+                txtDeclLostTitle: "Déclarer un Document Perdu",
+                txtDeclLostSub: "Si votre document n'est pas encore trouvé, déclarez-le perdu pour recevoir une alerte dès qu'il sera signalé.",
+                searchCardHeader: "Rechercher dans le Registre",
+                txtMatchTitle: "Correspondance Possible Identifiée !",
+                txtMatchInfo: "Informations de base correspondantes. L'adresse exacte reste masquée jusqu'à la confirmation du paiement.",
+                btnPayFee: "Payer les Frais de Service",
+                txtNoMatchTitle: "Aucun Document Correspondant Trouvé",
+                txtNoMatchSub: "Nous n'avons trouvé aucun objet signalé correspondant à vos critères. Souhaitez-vous publier une déclaration de perte ?",
+                btnTrySearch: "Essayer une Autre Recherche",
+
+                // Pay Fee & Consult
+                payFeeHeader: "Payer les Frais de Traitement",
+                txtFeeLabel: "Frais de Récupération :",
+                lblPayMethod: "Moyen de Paiement",
+                lblAccNum: "Numéro de Téléphone / Compte",
+                btnConfirmPay: "Confirmer le Paiement via l'API",
+                consultCardHeader: "Informations Complètes de Récupération",
+                txtPayVerified: "Statut du paiement vérifié ! Voici les détails complets pour récupérer votre document.",
+                btnBackDash: "Retour au Tableau de Bord",
+
+                // Declare Lost
+                lblFullNameOnDoc: "Nom Complet sur le Document",
+                lblLastLoc: "Dernier Lieu Connu",
+                lblAddDesc: "Description Complémentaire",
+
+                // Feedback & Notifications
+                fbSubmitHeader: "Laisser un Avis / Feedback",
+                lblSubject: "Sujet",
+                lblRating: "Évaluation",
+                lblMessage: "Message",
+                btnSubmitFeedback: "Envoyer l'Avis",
+                notifHeader: "Notifications du Propriétaire",
+
+                // Admin Console & Feedback Extension Use Case
+                adminPortalTitle: "Portail d'Administration Système",
+                tabDocHub: "Gestion du Hub de Documents",
+                tabUsers: "Gestion des Utilisateurs",
+                tabCategories: "Gestion des Catégories",
+                tabFeedback: "Gestion des Avis (Feedback)",
+                badgeAuthReq: "Authentification Requise",
+                subMonFound: "Surveiller les Documents Trouvés",
+                subMonDecl: "Surveiller les Déclarations",
+                tblType: "Type",
+                tblOwner: "Propriétaire",
+                tblDocNum: "N° Doc",
+                tblDepLoc: "Lieu de Dépôt",
+                tblActions: "Actions",
+                tblClaimedOwner: "Propriétaire Reclamant",
+                tblLastKnownLoc: "Dernier Lieu Connu",
+                tblName: "Nom",
+                tblRole: "Rôle",
+                btnAddCategory: "+ Ajouter une Catégorie",
+                
+                manageFeedbackTitle: "Console de Gestion des Avis (Manage Feedback)",
+                txtFbUseCaseDesc: "Acteur Principal: Admin | Prérequis Obligatoire: S'authentifier (<<Include>>)",
+                badgeAuthAdmin: "Administrateur Authentifié",
+                tblStatus: "Statut",
+                btnConsult: "Consulter l'Avis",
+                btnProcess: "Traiter l'Avis",
+                btnRemove: "Supprimer l'Avis",
+                modalConsultTitle: "Consultation de l'Avis (Consult Feedback)",
+                modalProcessTitle: "Traitement de l'Avis (Process Feed)",
+                lblUpdateStatus: "Mettre à jour le Statut",
+                lblAdminNotes: "Notes / Réponse de l'Admin",
+                btnSaveUpdate: "Enregistrer et Mettre à jour"
+            }
+        };
+
+        // LANGUAGE TOGGLE FUNCTIONALITY
+        function toggleLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
+            });
+            updateNavbar();
+            populateCategoryDropdowns();
+            renderAdminTables();
+        }
+
+        const db = {
+            users: [
+                { id: 1, name: "John Doe", email: "john@example.com", role: "User" },
+                { id: 2, name: "System Admin", email: "admin@docutrack.cm", role: "Administrator" }
+            ],
+            categories: [
+                "National Identity Card (CNI)",
+                "Cameroonian Ordinary Passport",
+                "Cameroonian Driver's License",
+                "Attestation d'Identité",
+                "Birth Certificate / Acte de Naissance",
+                "National Health Insurance / CNPS Card",
+                "Academic Diploma / BEPC / BAC / Degree",
+                "Cameroonian Student Card"
+            ],
+            foundDocuments: [
+                {
+                    id: 101,
+                    type: "National Identity Card (CNI)",
+                    ownerName: "Samuel Eto'o",
+                    docNumber: "102938475",
+                    location: "Yaoundé Central Station",
+                    depositPoint: "Police Station 1st District, Yaoundé",
+                    context: "Found inside a wallet near ticket counter",
+                    image: "captured_stub.jpg"
+                }
+            ],
+            declarations: [
+                {
+                    id: 201,
+                    type: "Cameroonian Ordinary Passport",
+                    docNumber: "A0098231",
+                    ownerName: "Jean Manga",
+                    location: "Douala International Airport",
+                    desc: "Lost near arrival terminal"
+                }
+            ],
+            notifications: [],
+            feedback: [
+                { id: 1, subject: "Great Platform", rating: 5, message: "Very helpful in finding my CNI fast!", status: "Pending", adminNotes: "" },
+                { id: 2, subject: "UI Suggestion", rating: 4, message: "Please add French translation option.", status: "Resolved", adminNotes: "Added language toggle in header." }
+            ]
+        };
+
+        // NAVIGATION HANDLERS
+        function navigateTo(pageId, pushToHistory = true) {
+            const currentActive = document.querySelector('.page-view.active')?.id;
+            if (pushToHistory && currentActive && currentActive !== pageId) {
+                navigationHistory.push(currentActive);
+            }
+            document.querySelectorAll('.page-view').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById(pageId);
+            if (target) target.classList.add('active');
+            updateNavbar();
+            window.scrollTo(0, 0);
+        }
+
+        function goBack() {
+            if (navigationHistory.length > 0) {
+                const previousPage = navigationHistory.pop();
+                navigateTo(previousPage, false);
+            } else {
+                navigateTo('landingPage', false);
+            }
+        }
+
+        function updateNavbar() {
+            const navLinks = document.getElementById('navLinks');
+            const t = translations[currentLang];
+            let html = `
+                <li class="nav-item"><a class="nav-link" href="#" onclick="navigateTo('landingPage')">${t.navHome}</a></li>
+                <li class="nav-item"><a class="nav-link" href="#" onclick="navigateTo('feedbackPage')">${t.navFeedback}</a></li>
+            `;
+
+            if (!currentUser) {
+                html += `
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="navigateTo('registerPage')">${t.navRegister}</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" onclick="navigateTo('loginPage')">${t.navLogin}</a></li>
+                `;
+            } else {
+                if (currentUser.role === "Administrator") {
+                    html += `<li class="nav-item"><a class="nav-link" href="#" onclick="navigateTo('adminDashboardPage')">${t.navAdmin}</a></li>`;
+                } else {
+                    html += `
+                        <li class="nav-item"><a class="nav-link" href="#" onclick="navigateTo('roleDashboardPage')">${t.navDashboard}</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="navigateTo('notificationsPage')">
+                                ${t.navNotifications} <span class="badge bg-danger badge-notification">${db.notifications.length}</span>
+                            </a>
+                        </li>
+                    `;
+                }
+                html += `<li class="nav-item"><a class="nav-link" href="#" onclick="logout()">${t.navLogout} (${currentUser.name})</a></li>`;
+            }
+            navLinks.innerHTML = html;
+        }
+
+        // POPULATE CATEGORY DROPDOWNS
+        function populateCategoryDropdowns() {
+            const dropdownIds = ['repType', 'searchType', 'decType'];
+            dropdownIds.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.innerHTML = '<option value="">Select Category / Sélectionner...</option>' + 
+                        db.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+                }
+            });
+
+            const filterSelect = document.getElementById('adminTypeFilter');
+            if (filterSelect) {
+                filterSelect.innerHTML = '<option value="">All Categories / Toutes</option>' + 
+                    db.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            }
+        }
+
+        // AUTHENTICATION LOGIC
+        function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            db.users.push({ id: Date.now(), name, email, role: "User" });
+            currentUser = { name, email, role: "User" };
+            document.getElementById('userDisplayName').innerText = name;
+            navigateTo('roleDashboardPage');
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('loginUser').value;
+            if (user === 'admin@docutrack.cm') {
+                currentUser = { name: "System Admin", email: user, role: "Administrator" };
+                renderAdminTables();
+                navigateTo('adminDashboardPage');
+            } else {
+                currentUser = { name: "John Doe", email: user, role: "User" };
+                document.getElementById('userDisplayName').innerText = currentUser.name;
+                navigateTo('roleDashboardPage');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            navigationHistory = ['landingPage'];
+            navigateTo('landingPage', false);
+        }
+
+        // CAMERA HANDLING
+        let videoStream = null;
+        async function startCamera() {
+            try {
+                const video = document.getElementById('cameraVideo');
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = videoStream;
+                video.classList.remove('d-none');
+                document.getElementById('snapBtn').classList.remove('d-none');
+            } catch (err) {
+                alert("Camera access denied or unavailable: " + err.message);
+            }
+        }
+
+        function captureSnapshot() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('capturedCanvas');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth || 320;
+            canvas.height = video.videoHeight || 240;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.classList.remove('d-none');
+            video.classList.add('d-none');
+            
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById('cameraImageData').value = canvas.toDataURL('image/png');
+        }
+
+        // FINDER: REPORT DOCUMENT LOGIC
+        function handleReportSubmit(e) {
+            e.preventDefault();
+            const alertDiv = document.getElementById('reportAlert');
+            const cameraData = document.getElementById('cameraImageData').value;
+
+            if (!cameraData) {
+                alertDiv.innerHTML = `<div class="alert alert-danger">Image capture required! Please use the webcam.</div>`;
+                return;
+            }
+
+            const docNumber = document.getElementById('repNumber').value.trim();
+            const ownerName = document.getElementById('repName').value.trim();
+
+            if (docNumber) {
+                const duplicate = db.foundDocuments.find(d => d.docNumber && d.docNumber === docNumber);
+                if (duplicate) {
+                    alertDiv.innerHTML = `<div class="alert alert-warning">Duplicate Detected! Document ${docNumber} has already been reported.</div>`;
+                    return;
+                }
+            }
+
+            const newDoc = {
+                id: Date.now(),
+                type: document.getElementById('repType').value,
+                ownerName: ownerName,
+                docNumber: docNumber || 'N/A',
+                location: document.getElementById('repLocation').value,
+                depositPoint: document.getElementById('repDeposit').value,
+                context: document.getElementById('repContext').value,
+                image: cameraData
+            };
+
+            db.foundDocuments.push(newDoc);
+
+            const matchDec = db.declarations.find(dec => 
+                (docNumber && dec.docNumber === docNumber) || fuzzyMatch(dec.ownerName, ownerName)
+            );
+            if (matchDec) {
+                db.notifications.push({
+                    id: Date.now(),
+                    message: `Match Notification: A document matching your lost declaration (${docNumber || ownerName}) was reported!`,
+                    matchedDoc: newDoc
+                });
+            }
+
+            alertDiv.innerHTML = `<div class="alert alert-success">Report Successfully Submitted! Saved into database.</div>`;
+            setTimeout(() => {
+                alertDiv.innerHTML = '';
+                navigateTo('finderDashboard');
+            }, 1500);
+        }
+
+        function fuzzyMatch(str1, str2) {
+            if (!str1 || !str2) return false;
+            const s1 = str1.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const s2 = str2.toLowerCase().replace(/[^a-z0-9]/g, '');
+            return s1.includes(s2) || s2.includes(s1);
+        }
+
+        // OWNER: SEARCH LOGIC
+        function handleSearchSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('searchName').value;
+            const number = document.getElementById('searchNumber').value.trim();
+
+            const match = db.foundDocuments.find(doc => 
+                (number && doc.docNumber === number) || fuzzyMatch(doc.ownerName, name)
+            );
+
+            if (match) {
+                currentActiveMatch = match;
+                document.getElementById('matchSummary').innerHTML = `
+                    <p><strong>Document Type:</strong> ${match.type}</p>
+                    <p><strong>Owner Name On Document:</strong> ${match.ownerName}</p>
+                    <p><strong>Found Location:</strong> ${match.location}</p>
+                    <p class="text-muted"><em>Full deposit point instructions are hidden pending payment verification.</em></p>
+                `;
+                navigateTo('matchFoundPage');
+            } else {
+                navigateTo('noMatchPage');
+            }
+        }
+
+        // OWNER: PAYMENT LOGIC
+        function handlePaymentSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('payBtn');
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Processing Payment API...`;
+
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-lock me-1"></i> Confirm Payment via Payment API`;
+                
+                document.getElementById('fullRecoveryDetails').innerHTML = `
+                    <p><strong>Document Type:</strong> ${currentActiveMatch.type}</p>
+                    <p><strong>Document Number:</strong> ${currentActiveMatch.docNumber}</p>
+                    <p><strong>Owner Name:</strong> ${currentActiveMatch.ownerName}</p>
+                    <p><strong>Found Location:</strong> ${currentActiveMatch.location}</p>
+                    <p><strong>Collection/Deposit Point:</strong> <span class="badge bg-success fs-6">${currentActiveMatch.depositPoint}</span></p>
+                    <p><strong>Context Details:</strong> ${currentActiveMatch.context}</p>
+                `;
+                navigateTo('consultPage');
+            }, 1200);
+        }
+
+        // OWNER: DECLARE LOST
+        function handleDeclareSubmit(e) {
+            e.preventDefault();
+            const alertDiv = document.getElementById('declareAlert');
+            const newDec = {
+                id: Date.now(),
+                type: document.getElementById('decType').value,
+                docNumber: document.getElementById('decNumber').value.trim() || 'N/A',
+                ownerName: document.getElementById('decName').value,
+                location: document.getElementById('decLocation').value,
+                desc: document.getElementById('decDesc').value
+            };
+            db.declarations.push(newDec);
+            alertDiv.innerHTML = `<div class="alert alert-success">Declaration Recorded Successfully! Available for comparison with future reports.</div>`;
+            setTimeout(() => {
+                alertDiv.innerHTML = '';
+                navigateTo('ownerDashboard');
+            }, 1500);
+        }
+
+        // NOTIFICATIONS RENDER
+        function renderNotifications() {
+            const container = document.getElementById('notificationsContainer');
+            if (db.notifications.length === 0) {
+                container.innerHTML = `<p class="text-muted text-center my-3">No new notifications.</p>`;
+                return;
+            }
+            container.innerHTML = db.notifications.map(n => `
+                <div class="alert alert-info d-flex justify-content-between align-items-center">
+                    <div><i class="fa-solid fa-bell me-2"></i>${n.message}</div>
+                    <button class="btn btn-sm btn-teal" onclick="viewMatchFromNotif(${n.matchedDoc.id})">View Match</button>
+                </div>
+            `).join('');
+        }
+
+        function viewMatchFromNotif(docId) {
+            currentActiveMatch = db.foundDocuments.find(d => d.id === docId);
+            document.getElementById('matchSummary').innerHTML = `
+                <p><strong>Document Type:</strong> ${currentActiveMatch.type}</p>
+                <p><strong>Owner Name On Document:</strong> ${currentActiveMatch.ownerName}</p>
+                <p><strong>Found Location:</strong> ${currentActiveMatch.location}</p>
+            `;
+            navigateTo('matchFoundPage');
+        }
+
+        // FEEDBACK SUBMIT
+        function handleFeedbackSubmit(e) {
+            e.preventDefault();
+            db.feedback.push({
+                id: Date.now(),
+                subject: document.getElementById('fbSubject').value,
+                rating: document.getElementById('fbRating').value,
+                message: document.getElementById('fbMessage').value,
+                status: "Pending",
+                adminNotes: ""
+            });
+            document.getElementById('feedbackAlert').innerHTML = `<div class="alert alert-success">Feedback submitted successfully. Thank you!</div>`;
+            setTimeout(() => {
+                document.getElementById('feedbackAlert').innerHTML = '';
+                navigateTo('landingPage');
+            }, 1200);
+        }
+
+        // MANAGE FEEDBACK MODULE FUNCTIONS (ADMIN)
+        
+        // <<Extend>> Consult Feedback
+        function consultFeedback(id) {
+            const item = db.feedback.find(f => f.id === id);
+            if (!item) return;
+            document.getElementById('consultModalContent').innerHTML = `
+                <p><strong>Subject:</strong> ${item.subject}</p>
+                <p><strong>Rating:</strong> ${item.rating} / 5 Stars</p>
+                <p><strong>Status:</strong> <span class="badge bg-info">${item.status}</span></p>
+                <p><strong>Feedback Message:</strong></p>
+                <div class="p-2 bg-light border rounded mb-2">${item.message}</div>
+                <p><strong>Admin Resolution Notes:</strong></p>
+                <div class="p-2 bg-light border rounded text-muted">${item.adminNotes || 'No administrative notes attached yet.'}</div>
+            `;
+            const modal = new bootstrap.Modal(document.getElementById('consultFeedbackModal'));
+            modal.show();
+        }
+
+        // <<Extend>> Process Feed
+        function openProcessModal(id) {
+            const item = db.feedback.find(f => f.id === id);
+            if (!item) return;
+            document.getElementById('processFbId').value = item.id;
+            document.getElementById('processStatusSelect').value = item.status;
+            document.getElementById('processNotes').value = item.adminNotes || '';
+            const modal = new bootstrap.Modal(document.getElementById('processFeedbackModal'));
+            modal.show();
+        }
+
+        function saveProcessedFeedback() {
+            const id = parseInt(document.getElementById('processFbId').value);
+            const item = db.feedback.find(f => f.id === id);
+            if (item) {
+                item.status = document.getElementById('processStatusSelect').value;
+                item.adminNotes = document.getElementById('processNotes').value;
+                renderAdminTables();
+                const modalEl = document.getElementById('processFeedbackModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+            }
+        }
+
+        // <<Extend>> Remove Feedback
+        function removeFeedback(id) {
+            if (confirm("Are you sure you want to remove this feedback record from the system?")) {
+                db.feedback = db.feedback.filter(f => f.id !== id);
+                renderAdminTables();
+            }
+        }
+
+        // ADMIN TAB MANAGEMENT
+        function switchAdminTab(tabId, btn) {
+            document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('d-none'));
+            document.getElementById(tabId).classList.remove('d-none');
+            document.querySelectorAll('#adminDashboardPage .list-group-item').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        function renderAdminTables() {
+            const filterText = (document.getElementById('adminFoundFilter')?.value || '').toLowerCase();
+            const filterType = document.getElementById('adminTypeFilter')?.value || '';
+            const t = translations[currentLang];
+
+            const filteredDocs = db.foundDocuments.filter(d => {
+                const matchesText = d.docNumber.toLowerCase().includes(filterText) || d.ownerName.toLowerCase().includes(filterText);
+                const matchesType = filterType === '' || d.type === filterType;
+                return matchesText && matchesType;
+            });
+
+            document.getElementById('adminDocsTable').innerHTML = filteredDocs.map(d => `
+                <tr>
+                    <td><span class="badge bg-light text-dark border">${d.type}</span></td>
+                    <td>${d.ownerName}</td>
+                    <td><code>${d.docNumber}</code></td>
+                    <td><small>${d.depositPoint}</small></td>
+                    <td><button class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>
+            `).join('');
+
+            document.getElementById('adminDeclarationsTable').innerHTML = db.declarations.map(dec => `
+                <tr>
+                    <td><span class="badge bg-light text-dark border">${dec.type}</span></td>
+                    <td>${dec.ownerName}</td>
+                    <td><code>${dec.docNumber}</code></td>
+                    <td><small>${dec.location}</small></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-success me-1" onclick="alert('Declaration validated by admin.')"><i class="fa-solid fa-check"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+
+            document.getElementById('adminUsersTable').innerHTML = db.users.map(u => `
+                <tr>
+                    <td>${u.id}</td><td>${u.name}</td><td>${u.email}</td><td>${u.role}</td>
+                    <td><button class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">${t.btnDeactivate}</button></td>
+                </tr>
+            `).join('');
+
+            document.getElementById('adminCategoriesList').innerHTML = db.categories.map(c => `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    ${c}
+                    <button class="btn btn-sm btn-outline-danger" onclick="this.closest('li').remove()">${t.btnDelete}</button>
+                </li>
+            `).join('');
+
+            // Manage Feedback Module Rendering with Consult, Process, and Remove extensions
+            document.getElementById('adminFeedbackTable').innerHTML = db.feedback.map(f => `
+                <tr>
+                    <td>${f.subject}</td>
+                    <td><span class="badge bg-warning text-dark">${f.rating}/5 <i class="fa-solid fa-star"></i></span></td>
+                    <td><span class="badge ${f.status === 'Resolved' ? 'bg-success' : 'bg-secondary'}">${f.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-navy me-1" title="${t.btnConsult}" onclick="consultFeedback(${f.id})"><i class="fa-solid fa-eye me-1"></i> ${t.btnConsult}</button>
+                        <button class="btn btn-sm btn-outline-teal me-1" title="${t.btnProcess}" onclick="openProcessModal(${f.id})"><i class="fa-solid fa-gears me-1"></i> ${t.btnProcess}</button>
+                        <button class="btn btn-sm btn-outline-danger" title="${t.btnRemove}" onclick="removeFeedback(${f.id})"><i class="fa-solid fa-trash me-1"></i> ${t.btnRemove}</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function addCategoryPrompt() {
+            const cat = prompt("Enter new category name / Entrez le nom de la catégorie:");
+            if (cat) {
+                db.categories.push(cat);
+                populateCategoryDropdowns();
+                renderAdminTables();
+            }
+        }
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            populateCategoryDropdowns();
+            updateNavbar();
+            renderNotifications();
+        });
+    </script>
+</body>
+</html>

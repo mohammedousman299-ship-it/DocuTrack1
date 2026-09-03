@@ -1,0 +1,55 @@
+:root {
+  --navy: #0F2C59;
+  --teal: #008080;
+  --soft-bg: #F8F9FA;
+}
+
+body {
+  background-color: var(--soft-bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.bg-navy {
+  background-color: var(--navy) !important;
+}
+
+.text-navy {
+  color: var(--navy) !important;
+}
+
+.btn-navy {
+  background-color: var(--navy);
+  color: #fff;
+}
+.btn-navy:hover {
+  background-color: #0b2247;
+  color: #fff;
+}
+
+.btn-teal {
+  background-color: var(--teal);
+  color: #fff;
+}
+.btn-teal:hover {
+  background-color: #006666;
+  color: #fff;
+}
+
+.btn-outline-teal {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+.btn-outline-teal:hover {
+  background-color: var(--teal);
+  color: #fff;
+}
+
+.border-teal {
+  border-color: var(--teal) !important;
+}
+
+.border-navy {
+  border-color: var(--navy) !important;
+}
