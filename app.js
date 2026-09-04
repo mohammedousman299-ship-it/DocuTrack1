@@ -3,11 +3,16 @@ let currentUser = null; // null, 'user', or 'admin'
 let videoStream = null;
 let currentAuthMode = 'login'; // Track current authentication mode: 'login' or 'signin'
 
+// Initialize persistent storage for reported documents
+let reportedDocuments = JSON.parse(localStorage.getItem('reportedDocuments')) || [];
+
+// Sections guests are allowed to view without logging in
 const publicSections = ['landing', 'register', 'login', 'feedback'];
 
 // Authentication Mode Toggle Handler
 function setAuthMode(mode) {
     // mode can be 'login' (existing account) or 'signin' (new account)
+    currentAuthMode = mode;
     const isExistingAccount = mode === 'login';
     
     // Update Section Title / Heading
@@ -28,6 +33,7 @@ function setAuthMode(mode) {
         el.style.display = isExistingAccount ? 'none' : 'block';
     });
 }
+
 function toggleAuthMode() {
   const newMode = currentAuthMode === 'login' ? 'signin' : 'login';
   setAuthMode(newMode);
@@ -37,11 +43,14 @@ function toggleAuthMode() {
 function showSection(sectionId) {
   stopCamera();
 
+  // Gatekeeping Check: Redirect to login if non-public section is requested by an unauthenticated user
   if (!publicSections.includes(sectionId) && !currentUser) {
-    showAlert('Display Error Message: Authentication required. Please log in first.', 'danger');
+    showAlert('You must log in or register before performing this action.', 'danger');
+    setAuthMode('login');
     sectionId = 'login';
   }
 
+  // Admin Access Guard
   if (sectionId === 'adminDashboard' && currentUser !== 'admin') {
     showAlert('Display Error Message: Unauthorized admin access.', 'danger');
     sectionId = 'login';
@@ -57,7 +66,7 @@ function showSection(sectionId) {
   document.getElementById('alertContainer').innerHTML = '';
 }
 
-// Global Alert Handler (Displays "Display error message" or "Display successful message")
+// Global Alert Handler
 function showAlert(message, type = 'danger') {
   const container = document.getElementById('alertContainer');
   if (!container) return;
@@ -105,17 +114,16 @@ function handleRegister(e) {
 
   // Step 2.1: Check conformity
   if (pass !== confirm) {
-    showAlert('Passwords do not match.', 'danger'); // Step 2.2: Display error message
+    showAlert('Passwords do not match.', 'danger');
     return;
   }
 
-  // Step 2.3.2.3: Display successful message
   showAlert('User account created successfully! You can now log in.', 'success');
   setAuthMode('login');
   showSection('login');
 }
 
-// Authentication Diagram Flow Logic
+// Authentication Flow Logic
 function handleLogin(e) {
   e.preventDefault();
   const username = document.getElementById('loginUser').value.trim().toLowerCase();
@@ -123,23 +131,23 @@ function handleLogin(e) {
 
   // Step 2.1: Check conformity
   if (!username || !pass) {
-    showAlert('Please fill in all required fields.', 'danger'); // Step 2.2: Display error message
+    showAlert('Please fill in all required fields.', 'danger');
     return;
   }
 
-  // Step 2.3.2: Request result check (DBMS query simulation)
+  // Request result check (DBMS query simulation)
   if (username === 'admin' && pass === 'admin123') {
     currentUser = 'admin';
     updateNavbar();
-    showAlert('Authentication successful! Welcome Admin.', 'success'); // Step 2.3.2.3: Display successful message
+    showAlert('Authentication successful! Welcome Admin.', 'success');
     showSection('adminDashboard');
   } else if (username !== 'admin' && pass.length >= 4) {
     currentUser = 'user';
     updateNavbar();
-    showAlert('Authentication successful!', 'success'); // Step 2.3.2.3: Display successful message
+    showAlert('Authentication successful!', 'success');
     showSection('roleSelect');
   } else {
-    showAlert('Invalid username or password.', 'danger'); // Step 2.3.2.2: Display error message
+    showAlert('Invalid username or password.', 'danger');
   }
 }
 
@@ -161,48 +169,82 @@ function handleFeedback(e) {
   e.target.reset();
 }
 
-// Finder Sequence Diagram Flow Logic
+// Finder Sequence Diagram Flow Logic (Includes Login Gatekeeping & Dynamic Duplicate Checking)
 function handleReportSubmit(e) {
   e.preventDefault();
+
+  // Gatekeeping Check: Ensure user is logged in before allowing submission
+  if (!currentUser) {
+    showAlert('Please log in or register before submitting a report.', 'danger');
+    setAuthMode('login');
+    showSection('login');
+    return;
+  }
+
   const type = document.getElementById('reportType').value;
   const name = document.getElementById('reportName').value.trim();
   const docNum = document.getElementById('reportDocNum').value.trim();
 
   // Step 3.1: Check conformity
   if (!type || !name) {
-    showAlert('Missing required fields in form.', 'danger'); // Step 3.2: Display error message
+    showAlert('Missing required fields in form.', 'danger');
     return;
   }
 
   // Step 3.3.2: DBMS verification simulation
   if (docNum === '000') {
-    showAlert('Invalid document details supplied.', 'danger'); // Step 3.2: Display error message
-  } else if (docNum === '111') {
-    showAlert('This document has already been reported in the database.', 'warning'); // Step 3.3.2.2: display document already reported
-  } else {
-    showSection('reportSuccess'); // Step 3.3.2.3: Display successful message screen
+    showAlert('Invalid document details supplied.', 'danger');
+    return;
   }
+
+  // Dynamic Duplicate Checking
+  const isDuplicate = reportedDocuments.some(doc => {
+    if (docNum && doc.docNum) {
+      return doc.type === type && doc.docNum.toLowerCase() === docNum.toLowerCase();
+    }
+    return doc.type === type && doc.name.toLowerCase() === name.toLowerCase();
+  });
+
+  if (isDuplicate || docNum === '111') {
+    showAlert('This document has already been reported in the database.', 'warning');
+    return;
+  }
+
+  // Store entry to local memory and persistent storage
+  reportedDocuments.push({ type, name, docNum, createdAt: new Date().toISOString() });
+  localStorage.setItem('reportedDocuments', JSON.stringify(reportedDocuments));
+
+  showSection('reportSuccess');
 }
 
-// Owner Declare Lost Sequence Diagram Flow Logic
+// Owner Declare Lost Sequence Diagram Flow Logic (Includes Login Gatekeeping)
 function handleDeclareSubmit(e) {
   e.preventDefault();
+
+  // Gatekeeping Check: Ensure user is logged in
+  if (!currentUser) {
+    showAlert('Please log in or register before declaring a lost document.', 'danger');
+    setAuthMode('login');
+    showSection('login');
+    return;
+  }
+
   const type = document.getElementById('declareType').value;
   const docNum = document.getElementById('declareDocNum').value.trim();
 
   // Step 2.1: Check conformity
   if (!type) {
-    showAlert('Please select a valid document category.', 'danger'); // Step 2.2: Display error message
+    showAlert('Please select a valid document category.', 'danger');
     return;
   }
 
   // Step 2.3.2: DBMS query verification simulation
   if (docNum === '000') {
-    showAlert('Invalid document number or missing required parameters.', 'danger'); // Step 2.2: Display error message
+    showAlert('Invalid document number or missing required parameters.', 'danger');
   } else if (docNum === 'err') {
-    showAlert('Database processing error. Please try again.', 'danger'); // Step 2.3.2.2: Display error message
+    showAlert('Database processing error. Please try again.', 'danger');
   } else {
-    showAlert('Lost document declaration recorded successfully in database!', 'success'); // Step 2.3.2.3: Display successful message
+    showAlert('Lost document declaration recorded successfully in database!', 'success');
     showSection('ownerDashboard');
   }
 }
