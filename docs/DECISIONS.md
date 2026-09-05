@@ -492,6 +492,90 @@ au lieu de 32.
 
 ---
 
+## D-022 — Laravel Fortify comme base d'authentification
+
+**Date :** 2026-09-05 · **Statut :** Actée · **Jalon :** 2
+
+Fortify, sans interface : il fournit la logique (inscription, connexion,
+réinitialisation, 2FA TOTP), les vues sont écrites avec nos composants Blade.
+
+**Alternatives écartées :** Breeze (échafaude une interface qu'il faudrait
+largement réécrire pour nos composants, et n'inclut pas la 2FA, obligatoire
+pour l'administrateur) ; authentification maison (réécrire connexion,
+réinitialisation, limitation de débit et TOTP sur un projet où la sécurité est
+l'exigence n°1 ajoute du risque là où du code éprouvé existe).
+
+**Justification :** nos parcours s'écartent nettement du standard —
+vérification téléphone bloquante, 2FA administrateur obligatoire, recherche
+différée. Fortify laisse cette liberté ; Breeze la contrarie.
+
+---
+
+## D-023 — 2FA administrateur par TOTP, jamais par SMS
+
+**Date :** 2026-09-05 · **Statut :** Actée
+
+Application d'authentification (code à 6 chiffres) et codes de récupération.
+
+**Alternatives écartées :** SMS (plus familier, aucune application à installer
+— mais vulnérable au **SIM swap**, qui est précisément la menace M-13, sur le
+compte qui voit toutes les images de documents) ; TOTP avec repli SMS (le
+repli ramène la vulnérabilité du canal le plus faible, qu'un attaquant
+choisira toujours ; les codes de récupération répondent au même besoin sans cet
+inconvénient).
+
+**Justification :** le compte administrateur est le point de collecte ultime
+(M-09). Sa 2FA ne doit pas dépendre d'un canal qu'un attaquant peut détourner
+en prenant le contrôle d'un numéro de téléphone.
+
+---
+
+## D-024 — La page d'accueil n'annonce aucun frais tant que le paiement est désactivé
+
+**Date :** 2026-09-05 · **Statut :** Actée · **Lié à :** D-015
+
+Le texte relatif aux frais de service est **conditionné au drapeau
+`PAYMENT_ENABLED`** : absent quand il vaut `false`, affiché automatiquement
+quand il passe à `true`.
+
+**Alternatives écartées :** annoncer les frais dès maintenant (conforme à la
+lettre du §9.1, mais communiquerait publiquement sur un modèle payant dont la
+licéité n'est pas établie et qui pourrait ne jamais exister) ; formulation
+conditionnelle prudente (le flou peut inquiéter davantage qu'un montant clair
+ou qu'un silence).
+
+**Justification :** le §9.1 exige la transparence sur le coût **avant que
+l'utilisateur ne s'engage**. Cette exigence est respectée dès lors que le texte
+apparaît en même temps que les frais eux-mêmes. Annoncer des frais qui
+n'existent pas découragerait des Trouveurs et des Propriétaires sans
+contrepartie — et le Trouveur est déjà l'acteur dont il faut le plus ménager le
+parcours (§9.1).
+
+---
+
+## D-025 — En-têtes de sécurité et CSP posés au jalon 2, pas au jalon 8
+
+**Date :** 2026-09-05 · **Statut :** Actée · **S'écarte du découpage du master prompt**
+
+CSP stricte, HSTS, `X-Content-Type-Options`, `Referrer-Policy` et
+`Permissions-Policy` sont mis en place au jalon 2, alors que le §10 place le
+durcissement au jalon 8.
+
+**Justification :** une CSP compatible Livewire et Alpine s'établit bien plus
+facilement sur trois écrans que sur trente — chaque violation est
+immédiatement rattachable au composant qui l'a causée. Ajoutée au jalon 8, elle
+casserait des composants écrits entre-temps, et la pression serait alors
+d'assouplir la politique plutôt que de corriger les composants.
+
+**Risque connu, à établir au début du travail :** une CSP réellement stricte,
+sans `unsafe-eval`, impose des contraintes à Alpine, dont les expressions sont
+évaluées dynamiquement. Une variante compatible CSP existe, au prix d'une
+syntaxe d'expressions restreinte. **Je ne connais pas avec certitude son état
+actuel ni son interaction avec Livewire 4 :** ce sera mesuré et rapporté avant
+d'écrire les composants, et la configuration retenue sera documentée (§4.6).
+
+---
+
 # Conséquences transverses
 
 Ces entrées ne sont pas des décisions mais des **effets** des décisions
