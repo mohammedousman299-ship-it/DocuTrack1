@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsurePhoneVerified;
 use App\Http\Middleware\VerifyInternalSecret;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,6 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->appendToGroup('internal', [
             VerifyInternalSecret::class,
+        ]);
+
+        // Garde la recherche, le signalement et la revendication : sans
+        // téléphone vérifié, les quotas par compte seraient décoratifs (D-013).
+        $middleware->alias([
+            'phone.verified' => EnsurePhoneVerified::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
