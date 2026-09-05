@@ -49,12 +49,24 @@ des correspondances irreproductibles.
 
 
 ```
-unaccent           « Ölanda »      → « Olanda »
-minuscules         « OLANDA »      → « olanda »
-ponctuation        « Ol'anda »     → « olanda »    (apostrophes, tirets, points)
-espaces            « miro  olanda »→ « miro olanda »
-TRI DES TOKENS     « olanda miro » → « miro olanda »
+unaccent              « Ölanda »        → « Olanda »
+minuscules            « OLANDA »        → « olanda »
+apostrophes SUPPRIMÉES« Ol'anda »       → « olanda »      (un seul token)
+autres signes SÉPARENT « Miro-Ayo »     → « ayo miro »    (deux tokens)
+espaces               « miro  olanda »  → « miro olanda »
+TRI DES TOKENS        « olanda miro »   → « miro olanda »
 ```
+
+**Apostrophe et tiret ne sont pas traités de la même façon**, et la distinction
+est délibérée :
+
+- l'**apostrophe est supprimée sans découper** — elle est interne au nom
+  (`Ol'anda` est un seul token, pas deux) ; sont concernées l'apostrophe
+  droite, l'apostrophe courbe `U+2019`, la lettre modificative `U+02BC` et
+  l'accent grave, tous rencontrés selon les claviers ;
+- le **tiret sépare**, comme tout autre signe : un nom composé doit ainsi se
+  rapprocher de sa graphie sans tiret, `Miro-Ayo Olanda` et `Miro Ayo Olanda`
+  donnant le même résultat.
 
 L'ordre nom/prénom est fréquemment inversé au Cameroun, selon que l'on remplit
 un formulaire administratif ou qu'on se présente oralement.
@@ -85,9 +97,21 @@ voulu — ce sont très probablement la même personne.
 ### 2.2 Numéros
 
 ```
-majuscules et retrait de tout caractère non alphanumérique
-homoglyphes : O → 0   et   I → 1
+1. retrait de tout caractère non [A-Za-z0-9]
+2. PUIS mise en majuscules
+3. homoglyphes : O → 0   et   I → 1
 ```
+
+**L'ordre des deux premières étapes est important**, et l'inverse était un
+défaut de la conception initiale. `upper()` dépend de la locale PostgreSQL :
+selon la collation, `upper('ß')` vaut `'ß'` ou `'SS'`. En filtrant d'abord, il
+ne reste que de l'ASCII au moment de changer la casse, et le résultat devient
+indépendant de la locale — donc reproductible entre SQL et PHP, et entre deux
+installations.
+
+> **Ce défaut a été trouvé par le test d'équivalence**, pas par relecture : la
+> chaîne `ßeta9` donnait `ETA9` en SQL et `SSETA9` en PHP. C'est la
+> justification concrète de la double implémentation décrite ci-dessus.
 
 **Seulement ces deux substitutions.** `S↔5` et `B↔8` ont été écartés : ils
 génèrent des collisions réelles entre numéros distincts. `O/0` et `I/1` sont

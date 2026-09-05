@@ -23,8 +23,6 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
@@ -32,5 +30,17 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+            <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_DATABASE" value="docutrack_test"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="5432"/>
+        <env name="DB_USERNAME" value="docutrack"/>
+        <env name="DB_PASSWORD" value="docutrack"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="DOCUMENT_NUMBER_HMAC_KEY" value="test-hmac-key-not-a-secret"/>
+        <env name="INTERNAL_CRON_SECRET" value="test-cron-secret-not-a-secret"/>
     </php>
 </phpunit>
