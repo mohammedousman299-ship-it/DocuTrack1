@@ -1,0 +1,23 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    # Sans ce greffon, PHPStan ne sait pas que Pest lie $this au TestCase
+    # dans les fermetures de test, et signale toutes les méthodes de test
+    # comme introuvables.
+    - vendor/pestphp/pest-plugin-phpstan/extension.neon
+
+parameters:
+    # §2 du master prompt : PHPStan/Larastan niveau 6 minimum.
+    level: 6
+
+    paths:
+        - app
+        - config
+        - database
+        - routes
+        - tests
+
+    # Les migrations retournent des classes anonymes ; l'analyse de leur corps
+    # n'apporte rien et produit du bruit sur les fermetures de Blueprint.
+    excludePaths:
+        - database/migrations/*
+

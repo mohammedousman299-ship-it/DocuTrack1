@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Style, analyse statique et tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # Même version majeure qu'en développement. Les extensions du moteur de
+        # rapprochement (unaccent, pg_trgm, fuzzystrmatch) sont fournies par
+        # postgresql-contrib, inclus dans cette image.
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: docutrack_test
+          POSTGRES_USER: docutrack
+          POSTGRES_PASSWORD: docutrack
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U docutrack -d docutrack_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql, mbstring, intl, zip, gd, sodium
+          coverage: none
+
+      - name: Cache des dépendances Composer
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Installer les dépendances
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Préparer l'environnement
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Style de code
+        run: ./vendor/bin/pint --test
+
+      - name: Analyse statique
+        run: ./vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
+      - name: Migrations
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_DATABASE: docutrack_test
+          DB_USERNAME: docutrack
+          DB_PASSWORD: docutrack
+
+      - name: Tests
+        run: ./vendor/bin/pest --colors=never
+
+  dependencies:
+    name: Audit des dépendances
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      # §4.6 : audit des dépendances en CI. Échoue sur toute vulnérabilité
+      # connue, plutôt que de se contenter de la signaler.
+      - name: Vulnérabilités connues
+        run: composer audit --no-interaction

@@ -22,6 +22,7 @@ const INTERNAL_ROUTES = [
     '/internal/cron/purge',
 ];
 
+/** @return array<string, string> */
 function withSecret(): array
 {
     return [VerifyInternalSecret::HEADER => (string) config('docutrack.internal_cron_secret')];

@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Middleware\VerifyInternalSecret;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,13 +14,13 @@ return Application::configure(basePath: dirname(__DIR__))
         then: function (): void {
             // Le groupe de middleware est déclaré dans le fichier de routes
             // lui-même, pour que la protection soit lisible à côté des routes.
-            Illuminate\Support\Facades\Route::group([], base_path('routes/internal.php'));
+            Route::group([], base_path('routes/internal.php'));
         },
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->appendToGroup('internal', [
-            App\Http\Middleware\VerifyInternalSecret::class,
+            VerifyInternalSecret::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
