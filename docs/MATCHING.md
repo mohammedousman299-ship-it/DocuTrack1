@@ -1,7 +1,8 @@
 # Moteur de rapprochement
 
 **Version du document :** 1.0 · **Date :** 2026-09-05
-**Version de l'algorithme décrite :** `v1` (conception — non encore mesurée)
+**Version de l'algorithme décrite :** `v1`
+**Mesures :** premières sondes en §3.6 — le protocole complet du §6 reste à exécuter
 
 > **Avertissement.** Les seuils et pondérations de ce document sont des
 > **valeurs de départ argumentées, pas des valeurs validées**. Un moteur de
@@ -55,19 +56,31 @@ espaces            « miro  olanda »→ « miro olanda »
 TRI DES TOKENS     « olanda miro » → « miro olanda »
 ```
 
-**Le tri alphabétique des tokens est le point clé.** L'ordre nom/prénom est
-fréquemment inversé au Cameroun, selon que l'on remplit un formulaire
-administratif ou qu'on se présente oralement. Trier les tokens neutralise
-l'inversion de façon déterministe.
+L'ordre nom/prénom est fréquemment inversé au Cameroun, selon que l'on remplit
+un formulaire administratif ou qu'on se présente oralement.
+
+> **Correction apportée après mesure (2026-09-05).** La version initiale de ce
+> document présentait le tri des tokens comme « le point clé » de la
+> neutralisation de l'inversion. **C'est faux pour le chemin trigramme :**
+> `pg_trgm` découpe la chaîne en mots et compare des *ensembles* de trigrammes,
+> l'ordre des mots ne l'affecte donc pas. Mesuré :
+> `similarity('miro olanda', 'olanda miro') = 1` — sans aucun tri.
+
+Le tri des tokens reste néanmoins nécessaire, mais pour d'autres usages, où la
+comparaison se fait par **égalité** et non par similarité :
+
+- l'empreinte de doublon `duplicate_fingerprint` (`DATA_MODEL.md` §4) ;
+- le contrôle de cohérence entre le nom du compte et le nom déclaré
+  (`THREAT_MODEL.md` M-02) ;
+- la reproductibilité du miroir PHP, qui n'a pas de `pg_trgm`.
 
 Alternative écartée : deviner quel token est le patronyme (heuristique fragile,
 qui échoue sur les noms composés et sur les prénoms qui sont aussi des
-patronymes). Le tri gère correctement les noms à trois ou quatre tokens, cas
-courant.
+patronymes).
 
 Effet de bord accepté : deux personnes portant les mêmes tokens dans un ordre
-différent deviennent indistinguables. C'est le comportement voulu — ce sont
-très probablement la même personne.
+différent deviennent indistinguables par empreinte. C'est le comportement
+voulu — ce sont très probablement la même personne.
 
 ### 2.2 Numéros
 
@@ -101,8 +114,35 @@ renseignent le champ :
 | Composante | Poids | Valeur |
 |---|---:|---|
 | `N` — numéro | 0,60 | `1` si `number_hmac` identiques, `0` sinon |
-| `P` — nom | 0,35 | `similarity()` trigramme sur `owner_name_normalized`, dans [0,1] |
+| `P` — nom | 0,35 | **Score composite** — voir §3.1.1 |
 | `G` — géographie | 0,05 | `1` si même région, `0` sinon |
+
+#### 3.1.1 Le score de nom est composite, pas purement trigramme
+
+La conception initiale retenait `similarity()` seul. **Les mesures du jalon 1
+montrent que c'est insuffisant** (§3.6).
+
+```
+P = max(
+      similarity(a, b),                              -- ensembles de trigrammes
+      1 - levenshtein(a, b) / greatest(len(a), len(b))  -- distance d'édition
+    )
+```
+
+Justification : le trigramme sous-évalue lourdement la faute de frappe d'un
+seul caractère, qui est **l'erreur la plus fréquente**. La distance d'édition
+la capte exactement. Prendre le maximum des deux conserve les qualités de
+chacun : le trigramme reste insensible à l'ordre des mots et robuste aux
+tokens manquants, la distance d'édition rattrape les fautes courtes.
+
+`levenshtein()` provient de `fuzzystrmatch`, dont la disponibilité devient donc
+**requise** — voir §7, où cette extension était initialement classée
+facultative.
+
+**Risque connu, à mesurer au jalon 5 :** sur des noms courts, la distance
+d'édition normalisée est généreuse — deux noms brefs réellement différents
+peuvent obtenir un score élevé. Une longueur minimale, ou une pondération par
+la longueur, sera peut-être nécessaire.
 
 ### 3.2 Formule
 
@@ -164,16 +204,51 @@ abandonnée (D-007), une simple faute de frappe dans le numéro suffit désormai
 
 Deux compensations :
 
-1. **Signal de faute de frappe probable.** Si les numéros diffèrent mais que
-   la similarité de nom est ≥ 0,90 et que la cohérence temporelle est
-   satisfaite, le couple est **quand même routé en file de revue
-   administrateur**, avec l'indicateur `possible_number_typo`. Son score reste
-   bas ; c'est le drapeau, pas le score, qui déclenche la revue.
+1. **Signal de faute de frappe probable.** Si les numéros diffèrent mais que le
+   score de nom `P` est ≥ 0,85 et que la cohérence temporelle est satisfaite,
+   le couple est **quand même routé en file de revue administrateur**, avec
+   l'indicateur `possible_number_typo`. Son score reste bas ; c'est le drapeau,
+   pas le score, qui déclenche la revue.
+   *(Seuil abaissé de 0,90 à 0,85 après mesure — voir §3.6.)*
 2. **Conséquence d'interface, à porter au jalon 4.** Le formulaire doit inviter
    explicitement l'utilisateur à **laisser le champ numéro vide s'il n'en est
    pas certain** — un numéro absent est neutre, un numéro faux est
    éliminatoire. C'est contre-intuitif pour l'utilisateur et cela doit donc
    être écrit dans l'interface, pas supposé.
+
+### 3.6 Premières mesures réelles — PostgreSQL 16 local, 2026-09-05
+
+Premières valeurs **mesurées** du projet. Elles portent sur des noms
+synthétiques et sur PostgreSQL 16 local, non sur Supabase.
+
+| Cas | `similarity()` | `levenshtein` | `P` composite |
+|---|---:|---:|---:|
+| Identique | 1,000 | 0 | 1,000 |
+| **Faute d'1 caractère** | **0,667** | 1 | **0,917** |
+| Faute d'1 caractère (variante) | 0,714 | 1 | 0,917 |
+| Faute de 2 caractères | 0,471 | 2 | 0,846 |
+| Nom composé 3 tokens, 1 faute | 0,737 | 1 | 0,933 |
+| **Tokens inversés** | **1,000** | — | **1,000** |
+| Prénom seul contre nom complet | 0,417 | — | 0,417 |
+| Personnes différentes | 0,000 | — | ≈ 0,17 |
+
+**Trois enseignements, dont deux invalident la conception initiale :**
+
+1. **L'inversion des tokens était déjà neutralisée** par `pg_trgm` seul
+   (similarité = 1). La justification du tri était fausse — corrigée en §2.1.
+2. **Le trigramme seul échoue sur la faute d'un caractère** : 0,667. Si le nom
+   est le **seul** champ comparable — cas fréquent, aucun numéro des deux
+   côtés — le score final vaut 0,667, **sous le seuil de notification de
+   0,75**. Une correspondance parfaitement valide n'aurait pas été notifiée.
+   D'où le score composite du §3.1.1, qui porte ce cas à 0,917.
+3. **Le seuil de 0,90 pour `possible_number_typo` était inatteignable** avec le
+   trigramme seul. Abaissé à 0,85 sur le score composite.
+
+**Ce que ces mesures ne disent pas.** Elles portent sur une poignée de cas
+choisis, pas sur un jeu étiqueté. Elles suffisent à **invalider** une
+conception, jamais à en **valider** une : elles ne remplacent pas le protocole
+du §6. Le point 2 en particulier suggère que les seuils 0,75 / 0,55 sont peut-
+être trop élevés, mais cela reste à établir par le balayage complet.
 
 ---
 
@@ -326,11 +401,13 @@ Supabase **n'a pas été vérifiée** :
 |---|---|---|
 | `unaccent` | Normalisation des noms | **Bloquante** |
 | `pg_trgm` | Similarité et index GIN | **Bloquante** |
-| `fuzzystrmatch` | Non utilisée en `v1` (D-007 supprime la distance d'édition sur les numéros) | Facultative |
+| `fuzzystrmatch` | `levenshtein()` dans le score composite de nom (§3.1.1) | **Bloquante** — reclassée après mesure |
 
-Les fichiers d'extension `unaccent`, `pg_trgm`, `fuzzystrmatch` et `pgcrypto`
-sont présents sur l'image de développement (PostgreSQL 16). **Cela ne préjuge
-en rien de leur disponibilité sur Supabase**, qui doit être testée au jalon 1.
+**Vérifié en local le 2026-09-05** sur PostgreSQL 16.13 : `unaccent`,
+`pg_trgm`, `pgcrypto` et `fuzzystrmatch` s'installent et fonctionnent
+(`CREATE EXTENSION` réussi, `unaccent()`, `similarity()` et `levenshtein()`
+exécutés). **Cela ne préjuge en rien de leur disponibilité sur Supabase**, qui
+reste non testée (`OPEN_QUESTIONS.md` Q-04).
 
 **Si `pg_trgm` ou `unaccent` sont indisponibles, la conception de ce document
 tombe** et doit être reprise : ce serait une remontée immédiate, pas un

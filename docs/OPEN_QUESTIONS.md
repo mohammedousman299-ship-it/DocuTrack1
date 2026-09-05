@@ -10,9 +10,16 @@ sont suivies séparément dans `COMPLIANCE_OPEN_QUESTIONS.md`.
 
 ## 1. Questions ouvertes bloquantes — jalon 1
 
-### Q-04 · Accès Supabase ⛔
+> **Mise à jour du 2026-09-05 — D-017.** Le développement se fait entièrement
+> en local. Les accès Supabase et Vercel **ne seront pas fournis**. Q-04 et
+> Q-05 ne bloquent donc plus le démarrage du jalon 1 ; elles deviennent des
+> **dettes de validation** qui restent ouvertes jusqu'à ce que des accès
+> existent. La §10 du master prompt exigeait cette validation au jalon 1 :
+> cette exigence n'est pas satisfaite, et c'est assumé (D-017).
 
-**Statut :** ouverte · **Bloque :** validation du jalon 1
+### Q-04 · Accès Supabase ⚠️
+
+**Statut :** ouverte, **dette de validation** (D-017) · **Ne bloque plus le démarrage**
 
 Il faut la chaîne de connexion PostgreSQL, **dans ses deux modes** — direct
 (`:5432`) et pooler Supavisor en mode transaction (`:6543`) — et la confirmation
@@ -34,9 +41,9 @@ que le rôle applicatif peut exécuter `CREATE EXTENSION`.
 un projet de production. Aucun secret dans le dépôt — variables
 d'environnement uniquement, `.env.example` documenté sans valeur.
 
-### Q-05 · Accès Vercel ⛔
+### Q-05 · Accès Vercel ⚠️
 
-**Statut :** ouverte · **Bloque :** validation du jalon 1
+**Statut :** ouverte, **dette de validation** (D-017) · **Ne bloque plus le démarrage**
 
 Nom du projet, région, et un jeton **à portée limitée et révocable**.
 
@@ -49,10 +56,12 @@ Nom du projet, région, et un jeton **à portée limitée et révocable**.
 - [ ] état réel de l'offre — régions, limites de durée d'exécution, tarif —
       **non vérifié à ce jour** (D-011).
 
-**Repli si les accès ne sont pas fournis :** développement sur PostgreSQL local
-en Docker, avec marquage explicite **NON VALIDÉ** de tout ce qui dépend de
-Supabase et de Vercel. Ce repli est acceptable temporairement, jamais jusqu'au
-jalon 8.
+**Repli retenu (D-017) :** développement sur PostgreSQL local, avec marquage
+explicite **NON VALIDÉ** de tout ce qui dépend de Supabase et de Vercel, et
+validation locale de ce qui peut l'être — image FrankenPHP construite et
+exécutée localement, endpoints internes exercés par appels HTTP répétés et
+concurrents. Ce repli **ne doit pas subsister jusqu'au jalon 8** : le pooler en
+mode transaction est le point le plus susceptible de surprendre.
 
 ### Q-02b · Lecture du CHANGELOG Livewire 3 → 4
 
@@ -205,6 +214,18 @@ production.
 
 ---
 
+### Q-28 · Les seuils 0,75 / 0,55 sont-ils trop élevés ?
+
+**Statut :** ouverte · **Jalon 5**
+
+Les premières mesures (`MATCHING.md` §3.6) montrent qu'avec le trigramme seul,
+une faute d'un caractère donnait 0,667 — sous le seuil de notification. Le
+score composite de D-018 corrige ce cas précis, mais **suggère que le
+calibrage global des seuils reste à établir**, et pas seulement la formule.
+À trancher par le balayage complet du §6 de `MATCHING.md`, pas par intuition.
+
+---
+
 ## 5. Plan des jalons révisé et ce qui le bloque
 
 Réordonné par rapport au master prompt : `DECISIONS.md` C-01 fait remonter
@@ -213,7 +234,7 @@ l'infrastructure de notification du jalon 5 au jalon 2.
 | Jalon | Contenu | Bloqué par |
 |---|---|---|
 | **0** | Cadrage documentaire | — **terminé** |
-| **1** | Socle technique, migrations, déploiement, cron + file | **Q-04, Q-05**, Q-02b, Q-26 |
+| **1** | Socle technique, migrations, conteneur local, cron + file | Q-02b, Q-26 — *Q-04 et Q-05 en dette (D-017)* |
 | **2** | Comptes, **vérification SMS**, **interface `NotificationChannel` + adaptateur factice**, Policies, limitation de débit, tests de refus | Q-15 pour la production seulement |
 | **3** | Parcours Trouveur, upload, suppression EXIF, doublons | Q-07, **arbitrage Q-14** |
 | **4** | Déclaration de perte, recherche N1, **notifications de résultat** | Q-23, Q-24, Q-25 |

@@ -360,6 +360,88 @@ n'aboutit pas, ou si la correspondance est infirmée.
 
 ---
 
+## D-017 — Développement entièrement local ; Supabase et Vercel non testés
+
+**Date :** 2026-09-05 · **Statut :** Actée · **Révise :** les questions Q-04 et Q-05
+
+Le développement se fait intégralement sur un environnement local :
+PostgreSQL 16 en local, adaptateurs factices pour le paiement, le SMS et
+l'e-mail. **Aucun accès Supabase ni Vercel n'est fourni.**
+
+**Alternative écartée :** fournir les accès pour valider le déploiement et le
+pooling au jalon 1, comme le prescrit la §10 du master prompt.
+
+**Conséquence à assumer, énoncée sans atténuation.** La §10 exige que le
+déploiement Vercel et le mécanisme asynchrone soient validés **au jalon 1, pas
+au dernier**, précisément parce qu'une architecture qui découvre les
+contraintes de la plateforme au jalon 8 est à réécrire. **Cette exigence ne
+peut pas être satisfaite.** Restent donc non validés :
+
+- le mode de connexion Supabase (direct 5432 contre pooler Supavisor 6543, et
+  la compatibilité de ce dernier avec les *prepared statements* de PDO) ;
+- la disponibilité des extensions `unaccent`, `pg_trgm` et `fuzzystrmatch` sur
+  Supabase — vérifiée en local uniquement (`MATCHING.md` §7) ;
+- la latence Supabase ↔ Vercel depuis le Cameroun ;
+- le runtime `container` de Vercel, ses régions, ses limites de durée
+  d'exécution et son tarif ;
+- Vercel Cron.
+
+**Atténuation retenue.** Ce qui peut être validé localement le sera, et ne sera
+pas repoussé :
+
+1. Le `Dockerfile.vercel` et le `Caddyfile` sont écrits au jalon 1 et l'image
+   FrankenPHP est **construite et exécutée en local**. Cela valide
+   l'architecture du conteneur — caches construits à l'image, absence d'état
+   sur le système de fichiers, `LOG_CHANNEL=stderr` — sans valider la
+   plateforme Vercel.
+2. Les endpoints internes (`/internal/queue/drain`, `/internal/cron/match`,
+   etc.) sont écrits, protégés, idempotents et **exercés en local par appels
+   HTTP répétés**, y compris en concurrence. Cela valide le mécanisme
+   asynchrone lui-même, qui est le vrai risque architectural — le
+   déclencheur Vercel Cron n'en est que l'ordonnanceur.
+3. Toute contrainte de plateforme (§3.1 du master prompt) est respectée dès la
+   première ligne : jamais `SESSION_DRIVER=file`, jamais
+   `FILESYSTEM_DISK=local`, jamais de worker permanent supposé.
+
+**Marquage.** Tout élément dépendant de Supabase ou de Vercel est marqué
+**NON VALIDÉ** dans `docs/DATABASE.md` et `docs/ASYNC.md` au jalon 1, et le
+reste jusqu'à ce que des accès soient fournis.
+
+**Risque résiduel, à ne pas minimiser :** le pooler en mode transaction est le
+point le plus susceptible de surprendre. S'il s'avère incompatible avec la
+configuration retenue, l'impact portera sur la couche de connexion et les
+migrations, pas sur le modèle de données ni sur le moteur — le coût d'une
+découverte tardive est donc élevé mais circonscrit.
+
+---
+
+## D-018 — Le score de nom est composite, pas purement trigramme
+
+**Date :** 2026-09-05 · **Statut :** Actée · **Amende :** D-007 et `MATCHING.md`
+
+Le rapprochement sur le nom combine similarité trigramme **et** distance de
+Levenshtein normalisée, en retenant le maximum des deux
+(`MATCHING.md` §3.1.1).
+
+**Origine :** les premières mesures réelles sur PostgreSQL 16
+(`MATCHING.md` §3.6) ont montré qu'une faute d'**un seul caractère** — l'erreur
+la plus fréquente — ne donne que 0,667 de similarité trigramme. Lorsque le nom
+est le seul champ comparable, cas rendu fréquent par D-007 qui a supprimé le
+flou sur les numéros, le score final tombait sous le seuil de notification :
+**une correspondance valide n'aurait pas été notifiée.**
+
+**Conséquence :** l'extension `fuzzystrmatch`, classée facultative au jalon 0,
+devient **bloquante** au même titre que `pg_trgm` et `unaccent`.
+
+**Deux corrections de documentation** consécutives à ces mesures :
+- la justification du tri des tokens était **fausse** : `pg_trgm` neutralise
+  déjà l'inversion nom/prénom (similarité = 1 sans aucun tri). Le tri reste
+  utile pour les comparaisons par égalité, pas pour la similarité ;
+- le seuil de 0,90 déclenchant `possible_number_typo` était inatteignable ;
+  abaissé à 0,85 sur le score composite.
+
+---
+
 # Conséquences transverses
 
 Ces entrées ne sont pas des décisions mais des **effets** des décisions
