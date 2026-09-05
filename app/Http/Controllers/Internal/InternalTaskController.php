@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Internal;
 
 use App\Internal\InternalTaskRunner;
 use App\Internal\TaskBudget;
+use App\Notifications\NotificationDispatcher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -72,13 +73,29 @@ final class InternalTaskController
         return response()->json($result->toArray());
     }
 
-    /** Envoi des notifications en attente (jalon 2 pour l'infrastructure). */
-    public function notify(): JsonResponse
+    /**
+     * Envoi des notifications en attente.
+     *
+     * L'infrastructure remonte du jalon 5 au jalon 2 (DECISIONS.md C-01) :
+     * la vérification SMS conditionne la création de compte, elle est donc un
+     * prérequis du socle et non une brique de fin de projet.
+     */
+    public function notify(NotificationDispatcher $dispatcher): JsonResponse
     {
-        $result = $this->runner->run('cron.notify', fn (TaskBudget $budget): array => [
-            'processed' => 0,
-            'details' => ['status' => 'not_implemented_until_milestone_4'],
-        ]);
+        $result = $this->runner->run('cron.notify', function (TaskBudget $budget) use ($dispatcher): array {
+            $processed = 0;
+
+            while ($budget->hasTimeLeft()) {
+                $sent = $dispatcher->flush(25);
+                $processed += $sent;
+
+                if ($sent === 0) {
+                    break;
+                }
+            }
+
+            return ['processed' => $processed];
+        });
 
         return response()->json($result->toArray());
     }

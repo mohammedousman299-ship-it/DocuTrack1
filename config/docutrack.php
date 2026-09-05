@@ -27,6 +27,14 @@ return [
         'currency' => env('PAYMENT_CURRENCY', 'XAF'),
     ],
 
+    /*
+     | Notifications. Le plafond par période évite le harcèlement et la fuite
+     | par accumulation (§7). Prestataire SMS À CONFIRMER (Q-15).
+     */
+    'notifications' => [
+        'cap_per_window' => (int) env('NOTIFICATIONS_CAP', 10),
+        'cap_window_hours' => (int) env('NOTIFICATIONS_CAP_WINDOW_HOURS', 24),
+    ],
     'sms' => [
         'provider' => env('SMS_PROVIDER', 'fake'),
     ],
