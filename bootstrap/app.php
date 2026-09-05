@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAdminTwoFactor;
 use App\Http\Middleware\EnsurePhoneVerified;
 use App\Http\Middleware\VerifyInternalSecret;
 use Illuminate\Foundation\Application;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // téléphone vérifié, les quotas par compte seraient décoratifs (D-013).
         $middleware->alias([
             'phone.verified' => EnsurePhoneVerified::class,
+            'admin.2fa' => EnsureAdminTwoFactor::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

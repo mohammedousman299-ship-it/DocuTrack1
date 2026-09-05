@@ -38,3 +38,27 @@ Route::get('/dev/ui', function () {
 
     return view('dev.ui');
 })->name('dev.ui');
+
+/*
+ | Activation de la double authentification.
+ |
+ | Accessible à tout compte authentifié : elle est obligatoire pour les
+ | administrateurs (D-014) et recommandée pour les autres.
+ */
+Route::middleware('auth')->get('/double-authentification', fn () => view('auth.two-factor-setup'))
+    ->name('two-factor.setup');
+
+/*
+ | Espace d'administration.
+ |
+ | Le middleware 'auth' est VOLONTAIREMENT absent : il redirige un visiteur
+ | anonyme vers la connexion, et cette redirection confirme que la route
+ | existe — exactement la divulgation que la §3.3 de PERMISSIONS.md interdit.
+ |
+ | 'admin.2fa' traite lui-même le cas anonyme et renvoie 404, de sorte que
+ | l'interface d'administration est indiscernable d'une URL inexistante pour
+ | qui n'y a pas droit.
+ */
+Route::middleware(['admin.2fa'])->prefix('administration')->group(function (): void {
+    Route::get('/', fn () => view('admin.dashboard'))->name('admin.dashboard');
+});

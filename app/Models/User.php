@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\AdminRole;
 use App\Matching\NameNormalizer;
+use App\Notifications\Auth\VerifyEmailNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -110,6 +111,18 @@ class User extends Authenticatable implements MustVerifyEmail
      * les quotas par compte seraient décoratifs, et la limitation par IP est
      * inopérante au Cameroun à cause du CGNAT des opérateurs (M-04).
      */
+    /**
+     * La notification part par la FILE, jamais en synchrone dans la requête.
+     *
+     * Un envoi synchrone ferait dépendre le temps de réponse de l'inscription
+     * d'un service tiers, et une panne de messagerie ferait échouer la
+     * création de compte elle-même.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailNotification);
+    }
+
     public function hasVerifiedPhone(): bool
     {
         return $this->phone_verified_at !== null;
