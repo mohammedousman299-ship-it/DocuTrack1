@@ -72,7 +72,7 @@ it('produit des noms normalisés identiques en SQL et en PHP', function (): void
         )->value;
 
         expect(NameNormalizer::normalize($input))
-            ->toBe($sql, "divergence sur le nom : ".var_export($input, true));
+            ->toBe($sql, 'divergence sur le nom : '.var_export($input, true));
     }
 });
 
@@ -84,7 +84,7 @@ it('produit des numéros normalisés identiques en SQL et en PHP', function (): 
         )->value;
 
         expect(DocumentNumberNormalizer::normalize($input))
-            ->toBe($sql, "divergence sur le numéro : ".var_export($input, true));
+            ->toBe($sql, 'divergence sur le numéro : '.var_export($input, true));
     }
 });
 
