@@ -1,9 +1,85 @@
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+/* ==========================================================================
+   DocuTrack — jetons de la charte graphique
+   Bleu    : confiance, sécurité, fiabilité technologique
+   Vert    : récupération, succès, restitution
+   Blanc   : clarté, simplicité, transparence
+   ========================================================================== */
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* --- Bleu : couleur principale --- */
+    --color-trust-50:  #eff6ff;
+    --color-trust-100: #dbeafe;
+    --color-trust-200: #bfdbfe;
+    --color-trust-300: #93c5fd;
+    --color-trust-400: #60a5fa;
+    --color-trust-500: #3b82f6;
+    --color-trust-600: #1d5fd0;  /* mesuré 5,83:1 sur blanc — AA */
+    --color-trust-700: #1e40af;  /* mesuré 8,72:1 sur blanc — AAA */
+    --color-trust-800: #1e3a8a;
+    --color-trust-900: #172554;
+
+    /* --- Vert : récupération et succès --- */
+    --color-recover-50:  #ecfdf5;
+    --color-recover-100: #d1fae5;
+    --color-recover-200: #a7f3d0;
+    --color-recover-300: #6ee7b7;
+    --color-recover-400: #34d399;
+    --color-recover-500: #10b981;
+    --color-recover-600: #047857;  /* mesuré 5,48:1 sur blanc — AA */
+    --color-recover-700: #065f46;  /* mesuré 7,68:1 sur blanc — AAA */
+    --color-recover-800: #064e3b;
+    --color-recover-900: #022c22;
+
+    /* Les 13 paires texte/fond de cette palette ont été mesurées : toutes
+       atteignent WCAG 2.1 AA (≥ 4,5:1), la plus faible à 5,30:1.
+       Voir docs/PERFORMANCE.md §4. */
+
+    /* --- Neutres --- */
+    --color-canvas: #ffffff;
+    --color-surface: #f8fafc;
+
+    /* --- États sémantiques --- */
+    --color-caution-100: #fef3c7;
+    --color-caution-700: #92400e;  /* mesuré 6,37:1 sur caution-100 — AA */
+    --color-danger-100:  #fee2e2;
+    --color-danger-700:  #b91c1c;  /* mesuré 6,47:1 sur blanc — AA */
+
+    /* --- Typographie ---
+       Pile système, sans police téléchargée. C'est un choix d'exigence n°3 :
+       sur un réseau 3G, chaque graisse embarquée coûte des centaines de
+       millisecondes avant le premier affichage utile. La pile système est
+       déjà installée, rendue instantanément, et lisible partout. */
+    --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+                 Arial, 'Noto Sans', sans-serif;
+}
+
+/* Cibles tactiles ≥ 44 × 44 px (WCAG 2.1 AA, §9.3) */
+@layer base {
+    button,
+    [role='button'],
+    a.dt-target,
+    input[type='submit'] {
+        min-height: 44px;
+    }
+
+    /* Focus toujours visible : la navigation clavier doit être complète. */
+    :focus-visible {
+        outline: 2px solid var(--color-trust-700);
+        outline-offset: 2px;
+    }
+
+    /* Respecte le réglage système de réduction des animations. */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
 }
