@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "web": {
+      "type": "container",
+      "dockerfile": "Dockerfile.vercel",
+      "port": 8080
+    }
+  },
+  "crons": [
+    { "path": "/internal/queue/drain", "schedule": "*/2 * * * *" },
+    { "path": "/internal/cron/match", "schedule": "*/5 * * * *" },
+    { "path": "/internal/cron/notify", "schedule": "*/5 * * * *" },
+    { "path": "/internal/cron/reconcile-payments", "schedule": "*/15 * * * *" },
+    { "path": "/internal/cron/purge", "schedule": "0 3 * * *" }
+  ]
+}

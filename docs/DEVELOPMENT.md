@@ -124,3 +124,33 @@ composer update phpstan/phpstan --prefer-source
 - Commits atomiques au format Conventional Commits, messages en anglais.
 - La documentation accompagne le code **dans le même commit**.
 - Toute décision d'architecture est consignée dans `DECISIONS.md`.
+
+## 7. Construire l'image de déploiement
+
+```sh
+docker build -f Dockerfile.vercel -t docutrack:local .
+docker run --rm --network host \
+  -e APP_KEY=... -e DB_HOST=127.0.0.1 -e DB_DATABASE=docutrack \
+  -e DB_USERNAME=docutrack -e DB_PASSWORD=docutrack \
+  -e INTERNAL_CRON_SECRET=... \
+  docutrack:local
+```
+
+La page de santé répond sur `/up`.
+
+### Réseau filtré
+
+Si le réseau de votre poste intercepte TLS, la construction échoue sur
+`self-signed certificate in certificate chain`. Ajouter l'autorité du proxy
+dans une **variante locale non versionnée** du Dockerfile plutôt que dans le
+fichier livré :
+
+```dockerfile
+COPY votre-ca.crt /usr/local/share/ca-certificates/local.crt
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
+    && update-ca-certificates && rm -rf /var/lib/apt/lists/*
+```
+
+puis `composer config --global use-github-api false` et `--prefer-source`.
+`Dockerfile.vercel` reste inchangé : ces contournements sont propres au poste,
+pas au projet.

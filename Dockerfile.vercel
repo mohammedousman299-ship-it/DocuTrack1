@@ -1,0 +1,76 @@
+# ==============================================================================
+# Image de déploiement DocuTrack — FrankenPHP
+#
+# Contraintes de plateforme appliquées ici, pas ajoutées après coup (§3.1) :
+#   - le système de fichiers du conteneur n'est PAS persistant ;
+#   - les caches du framework sont construits À L'IMAGE, jamais à l'exécution ;
+#   - aucune migration n'est déclenchée depuis une requête HTTP ;
+#   - aucune image de document ne touche ce système de fichiers.
+# ==============================================================================
+
+FROM dunglas/frankenphp:1-php8.4 AS base
+
+RUN install-php-extensions \
+        pdo_pgsql \
+        pgsql \
+        intl \
+        zip \
+        gd \
+        opcache \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# ------------------------------------------------------------------------------
+# Dépendances — couche séparée pour que le cache de build survive aux
+# modifications du code applicatif.
+# ------------------------------------------------------------------------------
+FROM base AS vendor
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY composer.json composer.lock ./
+
+# --no-dev : ni Pest, ni Larastan, ni Pint dans l'image livrée.
+RUN composer install \
+        --no-dev \
+        --no-interaction \
+        --no-scripts \
+        --prefer-dist \
+        --optimize-autoloader
+
+# ------------------------------------------------------------------------------
+# Image finale
+# ------------------------------------------------------------------------------
+FROM base AS runtime
+
+COPY --from=vendor /app/vendor ./vendor
+COPY . .
+
+# Caches du framework construits À L'IMAGE. Les reconstruire au démarrage
+# coûterait à chaque démarrage à froid, fréquent sur une plateforme qui
+# descend à zéro instance en cas d'inactivité.
+#
+# config:cache est volontairement ABSENT : il fige les variables
+# d'environnement au moment du build, alors qu'elles sont injectées au
+# déploiement. Il doit être exécuté au démarrage, pas ici.
+RUN php artisan route:cache \
+    && php artisan view:cache \
+    && php artisan event:cache
+
+# Configuration OPcache adaptée à un conteneur éphémère : le code ne change
+# jamais pendant la vie du conteneur, la revalidation est donc inutile.
+RUN { \
+        echo 'opcache.enable=1'; \
+        echo 'opcache.validate_timestamps=0'; \
+        echo 'opcache.memory_consumption=128'; \
+        echo 'opcache.max_accelerated_files=20000'; \
+    } > /usr/local/etc/php/conf.d/opcache.ini
+
+COPY Caddyfile /etc/frankenphp/Caddyfile
+
+ENV SERVER_NAME=:8080
+EXPOSE 8080
+
+# La page de santé /up est fournie par Laravel (bootstrap/app.php).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -fsS http://127.0.0.1:8080/up || exit 1

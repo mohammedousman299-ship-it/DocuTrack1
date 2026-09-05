@@ -1,0 +1,30 @@
+{
+	# Journalisation vers la sortie standard : le système de fichiers du
+	# conteneur n'est pas persistant (§3.1).
+	auto_https off
+	admin off
+	frankenphp
+	log {
+		output stderr
+		format json
+	}
+}
+
+{$SERVER_NAME:-:8080} {
+	root /app/public
+	encode zstd br gzip
+
+	# En-têtes de sécurité (§4.6). La CSP est volontairement absente ici :
+	# elle doit être compatible Livewire et Alpine, ce qui se règle au jalon 2
+	# avec l'interface, pas à l'aveugle.
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(self), geolocation=(), microphone=()"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+		-X-Powered-By
+	}
+
+	php_server
+}

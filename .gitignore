@@ -25,3 +25,6 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Autorité de certification du proxy local — jamais versionnée
+/ccr-ca-bundle.crt

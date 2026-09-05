@@ -1,0 +1,23 @@
+.git
+.github
+docs
+legacy
+node_modules
+vendor
+tests
+Makefile
+docker-compose.yml
+docker
+.env
+.env.*
+!.env.example
+
+# Caches construits sur la machine hôte : ils référencent les dépendances de
+# DÉVELOPPEMENT et casseraient une image installée avec --no-dev (le conteneur
+# tenterait de charger un fournisseur de services absent). Ils sont
+# reconstruits dans l'image.
+bootstrap/cache/*.php
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
