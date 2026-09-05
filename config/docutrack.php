@@ -31,6 +31,15 @@ return [
      | Notifications. Le plafond par période évite le harcèlement et la fuite
      | par accumulation (§7). Prestataire SMS À CONFIRMER (Q-15).
      */
+
+    /*
+     | Plafonds applicatifs. Resserrables sans redéploiement.
+     | La limitation par IP n'est jamais une barrière unique (M-04).
+     */
+    'limits' => [
+        'searches_per_day' => (int) env('LIMIT_SEARCHES_PER_DAY', 5),
+        'reports_per_day' => (int) env('LIMIT_REPORTS_PER_DAY', 10),
+    ],
     'notifications' => [
         'cap_per_window' => (int) env('NOTIFICATIONS_CAP', 10),
         'cap_window_hours' => (int) env('NOTIFICATIONS_CAP_WINDOW_HOURS', 24),
