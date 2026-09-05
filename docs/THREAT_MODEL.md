@@ -68,6 +68,11 @@ est insuffisante.
 
 ## 4. Menaces
 
+> Les noms figurant en exemple dans cette documentation sont **synthétiques**,
+> produits par combinaison de syllabes inventées. Aucun nom de personne réelle
+> n'est utilisé, y compris à titre d'illustration (§12 du master prompt).
+
+
 ### M-01 — Revendication frauduleuse assistée par la plateforme ⚠️ RISQUE N°1
 
 **Acteur :** A-2 · **Bien :** B-1, B-2, B-3
@@ -107,9 +112,9 @@ tel**, ni à l'utilisateur, ni dans la communication du projet.
 > Menace **non couverte** par la §4 du master prompt, qui vérifie l'identité du
 > revendiquant mais jamais celle du déclarant.
 
-J'ouvre un compte, je déclare que « Jean Manga a perdu sa CNI », et le système
+J'ouvre un compte, je déclare que « Miro Olanda a perdu sa CNI », et le système
 me **notifie automatiquement** (§1.4, §1.8) le jour où un Trouveur dépose la
-CNI de Jean Manga. Je suis alors en position de la revendiquer **avant** le
+CNI de Miro Olanda. Je suis alors en position de la revendiquer **avant** le
 véritable propriétaire, avec un temps d'avance structurel offert par la
 plateforme.
 

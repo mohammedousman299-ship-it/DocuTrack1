@@ -26,13 +26,18 @@ bloc (`THREAT_MODEL.md` M-03).
 
 ## 2. Table champ par champ
 
+> Les noms figurant en exemple dans cette documentation sont **synthétiques**,
+> produits par combinaison de syllabes inventées. Aucun nom de personne réelle
+> n'est utilisé, y compris à titre d'illustration (§12 du master prompt).
+
+
 Source : un `found_report` (signalement de découverte) rapproché d'une
 `lost_declaration` du demandeur.
 
 | Champ | N1 | N2 | N3 | Mécanisme de masquage |
 |---|---|---|---|---|
 | Type de document | Libellé de catégorie | Idem | Idem | Aucun — donnée non identifiante |
-| Nom porté sur le document | **Initiales seules** — `J. M.` | Prénom + initiale du nom — `Jean M.` | Complet | Calcul **serveur** sur les tokens du nom normalisé |
+| Nom porté sur le document | **Initiales seules** — `M. O.` | Prénom + initiale du nom — `Miro O.` | Complet | Calcul **serveur** sur les tokens du nom normalisé |
 | **Numéro du document** | **∅** | 4 derniers caractères, **en confirmation d'une saisie de l'utilisateur** | Complet | Déchiffrement serveur, jamais transmis au-delà du niveau |
 | Date de découverte | **Mois + année** | Date exacte | Date exacte | Troncature serveur à `YYYY-MM` |
 | Lieu de découverte | **Région seule** | Ville | Point de retrait complet | Remontée serveur dans la hiérarchie géographique |
@@ -69,8 +74,8 @@ de plusieurs candidats, seul le meilleur est présenté.
 
 ### 2.2 Pourquoi le masquage du nom a un sens
 
-Objection légitime : si l'utilisateur a cherché « Jean Manga » et que le
-système répond « J. M. », il n'apprend rien de nouveau — le masquage semble
+Objection légitime : si l'utilisateur a cherché « Miro Olanda » et que le
+système répond « M. O. », il n'apprend rien de nouveau — le masquage semble
 inutile.
 
 C'est précisément le comportement recherché. Le masquage ne protège pas contre

@@ -42,12 +42,17 @@ des correspondances irreproductibles.
 
 ### 2.1 Noms
 
+> Les noms figurant en exemple dans cette documentation sont **synthétiques**,
+> produits par combinaison de syllabes inventées. Aucun nom de personne réelle
+> n'est utilisé, y compris à titre d'illustration (§12 du master prompt).
+
+
 ```
-unaccent           « Étoo »        → « Etoo »
-minuscules         « ETOO »        → « etoo »
-ponctuation        « Eto'o »       → « etoo »      (apostrophes, tirets, points)
-espaces            « jean  manga » → « jean manga »
-TRI DES TOKENS     « manga jean »  → « jean manga »
+unaccent           « Ölanda »      → « Olanda »
+minuscules         « OLANDA »      → « olanda »
+ponctuation        « Ol'anda »     → « olanda »    (apostrophes, tirets, points)
+espaces            « miro  olanda »→ « miro olanda »
+TRI DES TOKENS     « olanda miro » → « miro olanda »
 ```
 
 **Le tri alphabétique des tokens est le point clé.** L'ordre nom/prénom est
