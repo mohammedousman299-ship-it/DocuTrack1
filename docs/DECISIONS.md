@@ -442,6 +442,56 @@ devient **bloquante** au même titre que `pg_trgm` et `unaccent`.
 
 ---
 
+## D-019 — MinIO en développement, pas de disque local
+
+**Date :** 2026-09-05 · **Statut :** Actée
+
+Le stockage objet de développement est **MinIO**, compatible S3, lancé par
+`docker-compose`. `FILESYSTEM_DISK=local` n'existe nulle part, développement
+compris.
+
+**Justification :** le code exerce le driver `s3` et les URL signées dès le
+développement, exactement comme en production. Le disque local entraînerait le
+code au mauvais motif et reporterait tous les problèmes au branchement du
+stockage réel.
+
+L'arbitrage Supabase Storage / Vercel Blob reste **non tranché**, faute
+d'accès (`STORAGE.md` §2). Aucune de ses cases ne sera remplie de mémoire.
+
+---
+
+## D-020 — Aucune police téléchargée, pile système
+
+**Date :** 2026-09-05 · **Statut :** Provisoire — à reconsidérer avec l'identité visuelle
+
+La police web du squelette Laravel a été retirée au profit d'une pile système.
+
+**Justification :** sur un réseau 3G, chaque graisse embarquée retarde le
+premier affichage utile de plusieurs centaines de millisecondes. Le cahier des
+charges demande « un caractère clair et moderne » ; une pile système récente y
+répond, et l'arbitrage penche vers l'exigence n°3.
+
+**À reconsidérer** si une identité visuelle formelle impose une police propre.
+Le changement ne toucherait qu'un jeton dans `resources/css/app.css`.
+
+---
+
+## D-021 — Empreintes stockées en hexadécimal, pas en `bytea`
+
+**Date :** 2026-09-05 · **Statut :** Actée · **Amende :** D-007
+
+`number_hmac`, `duplicate_fingerprint`, `content_hash` et
+`submitted_fields_hash` sont des `varchar(64)` hexadécimaux.
+
+**Origine :** défaut rencontré à l'exécution. PDO refuse d'insérer des octets
+bruts dans une colonne `bytea` sans liaison LOB explicite, et l'erreur produite
+est illisible. L'hexadécimal s'indexe et se compare aussi bien, pour 64 octets
+au lieu de 32.
+
+`number_encrypted` est en `text` : le cast chiffré de Laravel produit du base64.
+
+---
+
 # Conséquences transverses
 
 Ces entrées ne sont pas des décisions mais des **effets** des décisions

@@ -234,7 +234,7 @@ l'infrastructure de notification du jalon 5 au jalon 2.
 | Jalon | Contenu | Bloqué par |
 |---|---|---|
 | **0** | Cadrage documentaire | — **terminé** |
-| **1** | Socle technique, migrations, conteneur local, cron + file | Q-02b, Q-26 — *Q-04 et Q-05 en dette (D-017)* |
+| **1** | Socle technique, migrations, conteneur local, cron + file | **terminé** — *Q-04, Q-05, Q-26 en dette (D-017)* |
 | **2** | Comptes, **vérification SMS**, **interface `NotificationChannel` + adaptateur factice**, Policies, limitation de débit, tests de refus | Q-15 pour la production seulement |
 | **3** | Parcours Trouveur, upload, suppression EXIF, doublons | Q-07, **arbitrage Q-14** |
 | **4** | Déclaration de perte, recherche N1, **notifications de résultat** | Q-23, Q-24, Q-25 |
@@ -268,4 +268,33 @@ en dépend, et le jalon 3 doit trancher l'arbitrage Q-14 sans attendre.
 `ASYNC.md`, `PERFORMANCE.md`. Ils doivent contenir des **mesures réelles**, pas
 des suppositions. Ils sont produits au jalon 1.
 
-**Aucun code applicatif n'a été écrit**, conformément à la §10 du master prompt.
+**Aucun code applicatif n'a été écrit** au jalon 0, conformément à la §10 du
+master prompt.
+
+---
+
+## 7. État du jalon 1
+
+| Livrable | Statut | Vérification |
+|---|---|---|
+| Prototype archivé en `legacy/` | ✅ | — |
+| Laravel 13.30.1, Livewire 4.4.3, Pest 5.1.3, PHP 8.4 | ✅ | `php artisan --version` |
+| Contraintes de plateforme dès la première ligne | ✅ | jamais `file`, jamais `local` |
+| `docker-compose` : PostgreSQL + MinIO, bucket privé | ✅ | — |
+| 19 migrations, 16 entités | ✅ | appliquées, annulées, réappliquées |
+| Extensions `unaccent`, `pg_trgm`, `fuzzystrmatch` | ✅ | `CREATE EXTENSION` et exécution |
+| Normalisation SQL + miroir PHP | ✅ | test d'équivalence, 2 défauts trouvés |
+| Seeders : 8 catégories, seuils de rapprochement | ✅ | — |
+| **`EXPLAIN` sur 100 000 lignes** | ✅ **VALIDÉ** | *index scan* sur les 3 chemins |
+| File d'attente + endpoints internes | ✅ | 25 tests, verrou vérifié en conteneur |
+| Tailwind, jetons bleu/vert/blanc, galerie `/dev/ui` | ✅ | 13 paires de contraste mesurées |
+| `Dockerfile.vercel` **construit et exécuté** | ✅ | conteneur sain, `/up` à 200 en 8 ms |
+| CI GitHub Actions, PHPStan niveau 6 | ✅ | 0 erreur |
+| `DATABASE.md`, `ASYNC.md`, `STORAGE.md`, `PERFORMANCE.md` | ✅ | mesures réelles uniquement |
+
+**Suite de vérification :** Pint ✅ · PHPStan niveau 6, 0 erreur ✅ ·
+**35 tests, 97 assertions, tous passants** ✅
+
+**Restent en dette de validation (D-017) :** tout ce qui dépend de Supabase et
+de Vercel — mode de connexion, pooler, extensions côté Supabase, latence,
+runtime container, Vercel Cron.
