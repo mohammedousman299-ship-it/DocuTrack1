@@ -90,7 +90,7 @@ return new class extends Migration
             // Les éléments de preuve sont HACHÉS, jamais stockés en clair : ce
             // sont des données dont la fuite détruirait le mécanisme de
             // vérification lui-même. Le hachage suffit à détecter un balayage.
-            $table->binary('submitted_fields_hash');
+            $table->string('submitted_fields_hash', 64); // sha256 hexadécimal
 
             // Résultat GLOBAL, jamais par champ : ne jamais indiquer quel champ
             // était faux, ni combien étaient corrects (M-03).

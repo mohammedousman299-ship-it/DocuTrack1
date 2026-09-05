@@ -25,9 +25,13 @@ return new class extends Migration
             $table->string('owner_name_normalized');
 
             // D-007 : jamais indexé, jamais exposé avant N3.
-            $table->binary('number_encrypted')->nullable();
+            // Texte : le cast chiffré de Laravel produit une chaîne base64.
+            $table->text('number_encrypted')->nullable();
             // D-007 : égalité exacte sans exposer le numéro.
-            $table->binary('number_hmac')->nullable();
+            // HMAC-SHA256 en HEXADÉCIMAL (64 caractères) plutôt qu'en bytea :
+            // PDO n'accepte pas d'octets bruts sur une colonne bytea sans
+            // liaison LOB, et l'hexadécimal s'indexe et se compare aussi bien.
+            $table->string('number_hmac', 64)->nullable();
             // Confirmation N2 uniquement, en réponse à une saisie de l'utilisateur.
             $table->text('number_last4_encrypted')->nullable();
 

@@ -23,7 +23,7 @@ return new class extends Migration
 
             // Clé dans le stockage objet privé. Non devinable (M-12).
             $table->string('object_key')->unique();
-            $table->binary('content_hash');
+            $table->string('content_hash', 64); // sha256 hexadécimal
 
             $table->string('mime_type', 100);
             $table->unsignedInteger('byte_size');

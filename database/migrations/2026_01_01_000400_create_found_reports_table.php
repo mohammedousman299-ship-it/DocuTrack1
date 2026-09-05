@@ -26,8 +26,8 @@ return new class extends Migration
             $table->string('owner_name')->nullable();
             $table->string('owner_name_normalized')->nullable();
 
-            $table->binary('number_encrypted')->nullable();
-            $table->binary('number_hmac')->nullable();
+            $table->text('number_encrypted')->nullable();
+            $table->string('number_hmac', 64)->nullable(); // hex, cf. lost_declarations
             $table->text('number_last4_encrypted')->nullable();
 
             // Exposée tronquée au mois en N1, exacte en N2 (DISCLOSURE_LEVELS.md).
@@ -49,7 +49,7 @@ return new class extends Migration
 
             // Empreinte normalisée, pas égalité stricte (§4.5). Une collision
             // ne rejette pas : elle place le signalement en revue.
-            $table->binary('duplicate_fingerprint');
+            $table->string('duplicate_fingerprint', 64);
 
             $table->enum('status', [
                 'pending_review', 'active', 'matched', 'returned', 'rejected', 'expired',
