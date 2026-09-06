@@ -31,7 +31,7 @@ final class SecurityHeaders
 
         $response = $next($request);
 
-        $response->headers->set('Content-Security-Policy', $this->policy($nonce));
+        $response->headers->set('Content-Security-Policy', $this->policy($nonce, $request->secure()));
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set(
@@ -54,7 +54,33 @@ final class SecurityHeaders
         return $response;
     }
 
-    private function policy(string $nonce): string
+    /**
+     * Origine du stockage objet, si elle diffère de l'application.
+     *
+     * Dérivée de la configuration plutôt qu'écrite en dur : l'origine change
+     * entre développement et production, et une CSP qui ne suit pas casserait
+     * l'envoi sans avertissement.
+     */
+    private function storageOrigin(): ?string
+    {
+        $endpoint = (string) config('filesystems.disks.s3.endpoint');
+
+        if ($endpoint === '') {
+            return null;
+        }
+
+        $parts = parse_url($endpoint);
+
+        if (! isset($parts['scheme'], $parts['host'])) {
+            return null;
+        }
+
+        $origin = $parts['scheme'].'://'.$parts['host'];
+
+        return isset($parts['port']) ? $origin.':'.$parts['port'] : $origin;
+    }
+
+    private function policy(string $nonce, bool $secure): string
     {
         $directives = [
             "default-src 'self'",
@@ -67,16 +93,27 @@ final class SecurityHeaders
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob:",
             "font-src 'self'",
-            // Les images de documents transitent par le stockage objet, dont
-            // l'origine devra être ajoutée ici au jalon 3.
-            "connect-src 'self'",
+            // L'envoi direct écrit dans le stockage objet depuis le navigateur
+            // (§3.3) : sans son origine ici, la requête est bloquée et le
+            // parcours Trouveur s'arrête sans message d'erreur exploitable.
+            // C'est exactement le genre de fonctionnalité qu'une CSP casse.
+            'connect-src '.implode(' ', array_filter(["'self'", $this->storageOrigin()])),
             "media-src 'none'",
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",
             "frame-ancestors 'none'",
-            'upgrade-insecure-requests',
         ];
+
+        // upgrade-insecure-requests réécrit en HTTPS toute requête http:// de
+        // la page, y compris vers d'autres origines. Sur une installation
+        // locale servie en clair, cela casse l'envoi direct vers le stockage
+        // objet — le navigateur tente https:// sur un service qui n'écoute
+        // qu'en http, sans message d'erreur exploitable. La directive n'a de
+        // sens qu'une fois la page elle-même servie en HTTPS.
+        if ($secure) {
+            $directives[] = 'upgrade-insecure-requests';
+        }
 
         return implode('; ', $directives);
     }

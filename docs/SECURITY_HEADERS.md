@@ -95,10 +95,30 @@ expression inline fonctionne : OUI
 messages : 0
 ```
 
-**Aucune contrainte de syntaxe constatée sur ce cas.** Cela ne prouve pas que
-toutes les constructions Alpine passent : la vérification doit être refaite si
-un composant futur se comporte anormalement. Les deux composants de mesure
-restent dans `/dev/ui` comme test de non-régression.
+**Aucune contrainte de syntaxe constatée sur ce cas.** Cela ne prouvait pas que
+toutes les constructions Alpine passent — et la suite l'a démenti.
+
+### 3.4 La limite réelle, trouvée au jalon 3
+
+Le premier composant applicatif l'a mise au jour : un gestionnaire d'envoi de
+fichier écrit comme expression Alpine inline — bloc multi-instructions,
+fonctions fléchées, chaîne de promesses — produit :
+
+```
+CSP Parser Error: Unexpected token: error
+```
+
+**Et l'échec est silencieux côté utilisateur** : le champ ne réagit
+simplement pas. Aucune alerte, aucun message.
+
+L'évaluateur compatible CSP n'accepte que des expressions **simples** : accès
+de propriété, appel court, ternaire. D'où la règle D-032 : **aucune logique
+dans les attributs Alpine.** Elle vit dans un module externe, se déclare par
+attributs `data-*` et se branche par délégation d'évènement.
+
+C'est très exactement le risque qui justifiait de poser la CSP au jalon 2
+plutôt qu'au jalon 8. Découvert sur un composant, il aurait été découvert sur
+trente.
 
 ## 4. Conclusion opérationnelle
 
@@ -127,8 +147,11 @@ pour être réévalué au jalon 8, pas oublié.
 
 ## 6. À faire aux jalons suivants
 
-- **Jalon 3 :** ajouter l'origine du stockage objet à `connect-src` et
-  `img-src`, et **remesurer** — l'envoi direct depuis le navigateur est
-  précisément le genre de fonctionnalité qu'une CSP casse.
+- ~~**Jalon 3 :** ajouter l'origine du stockage objet à `connect-src`~~ —
+  **fait**. L'origine est dérivée de la configuration, jamais écrite en dur, et
+  le parcours complet a été rejoué au navigateur : 0 violation.
+- **Jalon 3, découvert en chemin :** `upgrade-insecure-requests` réécrivait en
+  `https://` l'appel vers le stockage servi en clair et cassait l'envoi sans
+  message exploitable. La directive n'est désormais émise qu'en HTTPS (D-033).
 - **Jalon 8 :** réévaluer `style-src`, et rejouer la mesure sur l'ensemble des
   écrans plutôt que sur `/dev/ui` seul.

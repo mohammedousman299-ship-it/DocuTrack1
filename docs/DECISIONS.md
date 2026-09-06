@@ -733,6 +733,46 @@ valider les signalements suspects (M-06) et les points de dépôt.
 
 ---
 
+## D-032 — Aucune logique dans les expressions Alpine
+
+**Date :** 2026-09-06 · **Statut :** Actée · **Précise D-026**
+
+Les attributs Alpine ne portent que des expressions **simples** : accès de
+propriété, appel court, ternaire. Toute logique — chaîne de promesses, fonction
+fléchée, bloc multi-instructions — vit dans un module JavaScript chargé comme
+script externe et se branche par **délégation d'évènement**.
+
+**Origine — une mesure, encore une fois.** D-026 notait que les expressions
+Alpine inline fonctionnaient sous le mode compatible CSP, en précisant que cela
+ne valait **que pour les cas mesurés**. Le premier composant réel l'a démenti :
+le gestionnaire d'envoi de fichier, un bloc multi-instructions avec fonctions
+fléchées, produisait `CSP Parser Error: Unexpected token` — et **l'échec était
+silencieux pour l'utilisateur**. Le champ ne réagissait tout simplement pas.
+
+C'est le risque qui justifiait de poser la CSP au jalon 2 plutôt qu'au jalon 8 :
+découvert sur un composant, il aurait été découvert sur trente.
+
+**Conséquence pratique :** un module externe pour la logique, des attributs
+`data-*` pour la déclarer, et la délégation d'évènement pour survivre aux
+rendus Livewire.
+
+---
+
+## D-033 — `upgrade-insecure-requests` seulement en HTTPS
+
+**Date :** 2026-09-06 · **Statut :** Actée
+
+La directive n'est émise que lorsque la page est elle-même servie en HTTPS.
+
+**Origine :** elle réécrit en `https://` **toute** requête `http://` de la
+page, y compris vers d'autres origines. Sur une installation locale servie en
+clair, elle cassait l'envoi direct vers le stockage objet : le navigateur
+tentait `https://` sur un service qui n'écoute qu'en `http`, sans message
+d'erreur exploitable. En production, page et stockage sont en HTTPS et la
+directive reprend tout son sens.
+
+---
+
 # Conséquences transverses
 
 Ces entrées ne sont pas des décisions mais des **effets** des décisions

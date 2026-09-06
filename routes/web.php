@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Auth\PhoneVerificationController;
+use App\Http\Controllers\Reports\UploadTicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'home')->name('home');
@@ -61,4 +62,21 @@ Route::middleware('auth')->get('/double-authentification', fn () => view('auth.t
  */
 Route::middleware(['admin.2fa'])->prefix('administration')->group(function (): void {
     Route::get('/', fn () => view('admin.dashboard'))->name('admin.dashboard');
+});
+
+/*
+ | Parcours du Trouveur (§1.5).
+ |
+ | Protégé par 'phone.verified' : sans numéro vérifié, les plafonds par compte
+ | seraient décoratifs et l'index de rapprochement deviendrait un canal
+ | d'extraction (D-013, M-06).
+ */
+Route::middleware(['auth', 'phone.verified'])->group(function (): void {
+    Route::view('/signalement', 'reports.create')->name('reports.create');
+
+    // Autorisation d'envoi direct : une URL d'écriture dans le stockage n'est
+    // pas une ressource anonyme, d'où l'authentification ET la limitation.
+    Route::post('/signalement/piece-jointe/ticket', UploadTicketController::class)
+        ->middleware('throttle:upload')
+        ->name('reports.upload-ticket');
 });
