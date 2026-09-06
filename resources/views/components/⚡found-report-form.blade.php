@@ -1,6 +1,7 @@
 <?php
 
 use App\Documents\SubmitFoundReport;
+use App\Models\DepositPoint;
 use App\Models\DocumentType;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -35,6 +36,7 @@ new class extends Component
     public string $extraInfo = '';
 
     public ?string $objectKey = null;
+    public ?string $depositPointId = null;
     public string $depositFreeText = '';
 
     public bool $submitted = false;
@@ -70,6 +72,7 @@ new class extends Component
             'documentNumber' => $this->documentNumber,
             'extraInfo' => $this->extraInfo,
             'objectKey' => $this->objectKey,
+            'depositPointId' => $this->depositPointId,
             'depositFreeText' => $this->depositFreeText,
         ]);
     }
@@ -119,6 +122,7 @@ new class extends Component
     public function submit(SubmitFoundReport $service): void
     {
         $this->validate($this->rulesForStep(1) + $this->rulesForStep(2) + [
+            'depositPointId' => ['nullable', Rule::exists('deposit_points', 'id')->where('is_verified', true)],
             'depositFreeText' => ['nullable', 'string', 'max:300'],
         ]);
 
@@ -129,6 +133,7 @@ new class extends Component
             'found_on' => $this->foundOn,
             'found_region' => $this->foundRegion,
             'found_city' => $this->foundCity,
+            'deposit_point_id' => $this->depositPointId,
             'deposit_free_text' => $this->depositFreeText !== '' ? $this->depositFreeText : null,
             'extra_info' => $this->extraInfo !== '' ? $this->extraInfo : null,
             'object_key' => $this->objectKey,
@@ -145,6 +150,21 @@ new class extends Component
     public function documentTypes(): array
     {
         return DocumentType::query()->where('is_active', true)->orderBy('id')->get()->all();
+    }
+
+    /**
+     * Points de dépôt proposables.
+     *
+     * Seuls les points VÉRIFIÉS sont proposés : orienter quelqu'un vers un
+     * lieu non confirmé serait pire que ne rien lui dire. Tant qu'aucun
+     * partenaire n'existe, cette liste est vide et seul le texte libre reste
+     * (C-03).
+     *
+     * @return array<int, DepositPoint>
+     */
+    public function depositPoints(): array
+    {
+        return DepositPoint::query()->usable()->orderBy('city')->get()->all();
     }
 };
 ?>
@@ -216,9 +236,37 @@ new class extends Component
                              hint="Si vous n'êtes pas certain du numéro, laissez ce champ vide : un numéro erroné empêche de retrouver le propriétaire, un champ vide non."
                              :error="$errors->first('documentNumber')" />
 
+                    {{-- D-028 / M-14 : le dépôt auprès d'un tiers est le mode
+                         PRIVILÉGIÉ, la mise en relation n'est qu'un repli. Il
+                         évite par construction de mettre deux inconnus en
+                         relation, et l'interface doit le dire clairement. --}}
+                    <div class="rounded-lg border border-recover-200 bg-recover-50 p-4">
+                        <p class="text-sm font-semibold text-recover-900">
+                            Le plus sûr : déposer le document
+                        </p>
+                        <p class="mt-1 text-sm text-recover-900">
+                            Déposé auprès d'un poste de police, d'une mairie ou d'une
+                            structure partenaire, le document est rendu à son propriétaire
+                            sans que vous ayez à le rencontrer.
+                        </p>
+
+                        @if ($this->depositPoints() !== [])
+                            <div class="mt-3 flex flex-col gap-1.5">
+                                <label for="depositPointId" class="text-sm font-medium">Point de dépôt</label>
+                                <select id="depositPointId" wire:model="depositPointId"
+                                        class="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                                    <option value="">Je n'ai pas encore déposé le document</option>
+                                    @foreach ($this->depositPoints() as $point)
+                                        <option value="{{ $point->id }}">{{ $point->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+                    </div>
+
                     <x-field label="Où se trouve le document maintenant ?" name="depositFreeText"
                              wire:model="depositFreeText"
-                             hint="Si vous l'avez déposé quelque part — poste de police, mairie — indiquez-le : c'est la façon la plus sûre de le rendre à son propriétaire."
+                             hint="Décrivez où vous l'avez déposé, ou indiquez que vous le conservez. Cette information est relue avant d'être communiquée."
                              :error="$errors->first('depositFreeText')" />
 
                     <div class="flex gap-3">

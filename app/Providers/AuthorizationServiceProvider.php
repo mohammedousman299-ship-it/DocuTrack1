@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\FoundReport;
+use App\Models\ReportAttachment;
 use App\Models\User;
+use App\Policies\FoundReportPolicy;
+use App\Policies\ReportAttachmentPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +24,9 @@ final class AuthorizationServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        Gate::policy(FoundReport::class, FoundReportPolicy::class);
+        Gate::policy(ReportAttachment::class, ReportAttachmentPolicy::class);
+
         // Administration fonctionnelle : utilisateurs, catégories, retours,
         // tableaux de bord. Ne donne JAMAIS accès aux noms complets, aux
         // numéros ni aux images (D-014).
