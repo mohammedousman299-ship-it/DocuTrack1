@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Auth\PhoneVerificationController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+Route::view('/', 'home')->name('home');
 
 /*
  | Vérification du numéro de téléphone — contrôle anti-Sybil principal (D-013).

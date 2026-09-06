@@ -576,6 +576,56 @@ d'écrire les composants, et la configuration retenue sera documentée (§4.6).
 
 ---
 
+## D-026 — Livewire en mode compatible CSP (`csp_safe`)
+
+**Date :** 2026-09-06 · **Statut :** Actée · **Résout le risque ouvert de D-025**
+
+`livewire.csp_safe` est réglé à `true`. Ce n'est pas un réglage cosmétique :
+à `false`, l'interface entière cesse de répondre sous notre CSP.
+
+**Origine — une mesure, pas une supposition.** D-025 signalait un risque non
+évalué : une CSP sans `unsafe-eval` contraint Alpine, dont les expressions sont
+évaluées dynamiquement. La mesure au navigateur (Chromium via Playwright, sur
+un composant Livewire réel) a confirmé le risque puis l'a levé :
+
+| Configuration | Interaction | Violations CSP |
+|---|---|---|
+| `csp_safe = false` | **morte** | **2** (`unsafe-eval` refusé) |
+| `csp_safe = true` | fonctionnelle | **0** |
+
+Le composant s'affichait dans les deux cas — le rendu initial est fait côté
+serveur — mais sans ce réglage aucun clic ne produisait d'effet. Une CSP posée
+sans cette mesure aurait donc livré une interface silencieusement inerte.
+
+**Crainte levée :** les expressions Alpine inline ordinaires fonctionnent sous
+ce mode ; aucune réécriture de composants n'est nécessaire. Cela vaut pour les
+cas mesurés, pas pour toute construction Alpine imaginable.
+
+**Verrouillage :** deux tests figent le résultat — l'un interdit l'apparition
+de `unsafe-eval` dans `script-src`, l'autre vérifie que `csp_safe` reste actif.
+Sans eux, la tentation le jour d'un composant récalcitrant serait d'assouplir
+la politique plutôt que de corriger le code.
+
+Détail complet : `docs/SECURITY_HEADERS.md`.
+
+---
+
+## D-027 — Livewire 4 utilise des composants monofichiers
+
+**Date :** 2026-09-06 · **Statut :** Constat · **Confirme D-002**
+
+`php artisan make:livewire` produit un **composant monofichier** dans
+`resources/views/components/`, mêlant classe PHP et gabarit Blade, au lieu du
+couple classe + vue de Livewire 3.
+
+Ce n'est pas une décision mais un constat, consigné parce qu'il confirme que
+D-002 (retenir Livewire 4) portait une rupture réelle : la structure des
+fichiers de composants diffère de celle du master prompt et de la documentation
+Livewire 3. Aucun blocage rencontré ; les composants d'interface existants,
+qui sont des composants Blade et non Livewire, ne sont pas concernés.
+
+---
+
 # Conséquences transverses
 
 Ces entrées ne sont pas des décisions mais des **effets** des décisions

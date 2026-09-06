@@ -16,6 +16,19 @@
     </x-alert>
 
     <section class="mb-10">
+        <h2 class="mb-3 text-lg font-semibold">Livewire sous CSP stricte</h2>
+        <p class="mb-3 text-sm text-slate-600">
+            Composant de mesure : il vérifie qu'une CSP stricte, sans
+            <code>unsafe-eval</code> ni <code>unsafe-inline</code> sur les scripts,
+            laisse fonctionner Livewire et Alpine (D-025).
+        </p>
+        <x-card>
+            <livewire:dev-counter />
+            <div class="mt-4"><livewire:dev-alpine-probe /></div>
+        </x-card>
+    </section>
+
+    <section class="mb-10">
         <h2 class="mb-3 text-lg font-semibold">Palette</h2>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <x-card title="Bleu — confiance">

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAdminTwoFactor;
 use App\Http\Middleware\EnsurePhoneVerified;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyInternalSecret;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -27,6 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Garde la recherche, le signalement et la revendication : sans
         // téléphone vérifié, les quotas par compte seraient décoratifs (D-013).
+        // En-têtes de sécurité sur toutes les réponses web (§4.6, D-025).
+        $middleware->web(append: [
+            SecurityHeaders::class,
+        ]);
+
         $middleware->alias([
             'phone.verified' => EnsurePhoneVerified::class,
             'admin.2fa' => EnsureAdminTwoFactor::class,
