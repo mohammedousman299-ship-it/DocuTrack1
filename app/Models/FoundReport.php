@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * Signalement de découverte d'un document.
@@ -38,6 +39,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $number_hmac
  * @property string $duplicate_fingerprint
  * @property FoundReportStatus $status
+ * @property Carbon $expires_at
+ * @property Carbon|null $found_on
+ * @property string|null $number_encrypted
+ * @property string|null $number_last4_encrypted
+ * @property string|null $deposit_reference_encrypted
  */
 class FoundReport extends Model
 {

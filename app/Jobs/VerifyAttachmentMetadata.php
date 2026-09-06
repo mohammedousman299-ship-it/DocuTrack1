@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 /**
  * Vérifie, côté serveur, qu'une pièce jointe est dépourvue de métadonnées.
@@ -57,7 +58,22 @@ final class VerifyAttachmentMetadata implements ShouldQueue
             // Le nettoyage client a échoué, ou l'envoi n'est pas passé par
             // notre interface. On renettoie plutôt que de rejeter : le
             // signalement d'un document légitime ne doit pas être perdu.
-            $bytes = ExifStripper::strip($bytes);
+            try {
+                $bytes = ExifStripper::strip($bytes);
+            } catch (RuntimeException $e) {
+                // Le contenu n'est pas une image décodable — quelqu'un a
+                // déposé autre chose au bout d'une URL pré-signée. On refuse
+                // de le marquer servable et on laisse la purge l'emporter,
+                // plutôt que d'échouer en boucle sur une tâche qui ne peut
+                // pas aboutir.
+                Log::warning('Pièce jointe non décodable', [
+                    'attachment' => $attachment->id,
+                    'raison' => $e->getMessage(),
+                ]);
+
+                return;
+            }
+
             $disk->put($attachment->object_key, $bytes);
         }
 
