@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Internal;
 use App\Internal\InternalTaskRunner;
 use App\Internal\TaskBudget;
 use App\Notifications\NotificationDispatcher;
+use App\Search\ProcessSearchRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -63,12 +64,12 @@ final class InternalTaskController
      * (verrou, budget, idempotence) sont validés dès maintenant, parce que
      * c'est l'architecture asynchrone qui est le risque, pas l'algorithme.
      */
-    public function match(): JsonResponse
+    public function match(ProcessSearchRequests $searches): JsonResponse
     {
-        $result = $this->runner->run('cron.match', fn (TaskBudget $budget): array => [
-            'processed' => 0,
-            'details' => ['status' => 'not_implemented_until_milestone_5'],
-        ]);
+        $result = $this->runner->run(
+            'cron.match',
+            fn (TaskBudget $budget): array => $searches->handle($budget)
+        );
 
         return response()->json($result->toArray());
     }

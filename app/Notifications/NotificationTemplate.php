@@ -28,8 +28,16 @@ enum NotificationTemplate: string
     case EmailVerificationLink = 'email_verification_link';
     case PasswordReset = 'password_reset';
     case MatchFound = 'match_found';
+    /**
+     * Message UNIQUE de fin de recherche (D-034).
+     *
+     * Il ne dit jamais si quelque chose a été trouvé. Deux messages distincts
+     * révéleraient le résultat sur un écran verrouillé et rendraient à un
+     * attaquant le signal binaire que la recherche différée avait précisément
+     * pour but de supprimer : il lui suffirait de lire ses SMS au lieu
+     * d'itérer sur le site, hors de portée des quotas et de la journalisation.
+     */
     case SearchCompleted = 'search_completed';
-    case SearchNoResult = 'search_no_result';
     case ClaimDecision = 'claim_decision';
 
     /**
@@ -52,7 +60,6 @@ enum NotificationTemplate: string
             // connecter. Rien du document, rien du signalement.
             self::MatchFound => [],
             self::SearchCompleted => [],
-            self::SearchNoResult => [],
             self::ClaimDecision => [],
         };
     }

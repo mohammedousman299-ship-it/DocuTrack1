@@ -24,7 +24,5 @@ return [
 
     'search_completed' => 'DocuTrack : votre recherche est terminée. Connectez-vous pour consulter le résultat.',
 
-    'search_no_result' => 'DocuTrack : votre recherche n\'a donné aucun résultat pour le moment. Connectez-vous pour déclarer la perte et être prévenu plus tard.',
-
     'claim_decision' => 'DocuTrack : votre demande a été traitée. Connectez-vous pour en connaître le résultat.',
 ];

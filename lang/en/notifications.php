@@ -15,7 +15,5 @@ return [
 
     'search_completed' => 'DocuTrack: your search has finished. Sign in to view the result.',
 
-    'search_no_result' => 'DocuTrack: your search returned no result for now. Sign in to declare the loss and be notified later.',
-
     'claim_decision' => 'DocuTrack: your request has been processed. Sign in to see the outcome.',
 ];
