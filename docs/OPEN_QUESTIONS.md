@@ -76,6 +76,18 @@ avant d'écrire le premier composant, et à confirmer ou infirmer dans
 
 ## 2. Questions ouvertes bloquantes — jalons ultérieurs
 
+### Q-14 · Points de dépôt partenaires — ✅ **TRANCHÉE** (D-028)
+
+Le dépôt auprès d'un tiers reste le mode privilégié ; à défaut, N3 devient une
+messagerie interne anonymisée. La décision crée une menace nouvelle, M-14, dont
+les contrôles sont documentés — et dont les limites le sont aussi : aucun
+n'empêche deux personnes décidées d'échanger leurs coordonnées.
+
+**Reste ouvert :** aucun partenaire réel n'existe. Tant que `deposit_points`
+est vide, seul le repli s'applique.
+
+<details><summary>Énoncé d'origine</summary>
+
 ### Q-14 · Points de dépôt partenaires ⛔⛔
 
 **Statut :** ouverte · **Bloque :** jalon 6 · **Arbitrage requis au jalon 3**
@@ -92,6 +104,8 @@ jalon 3 (voir `DECISIONS.md` C-03 et `PAYMENT_DECISION.md` §2.1) :
 
 > **C'est à ce jour la question la plus structurante du projet, et elle n'est
 > pas technique.**
+
+</details>
 
 ### Q-13 · Licéité du modèle payant ⛔
 
@@ -236,7 +250,7 @@ l'infrastructure de notification du jalon 5 au jalon 2.
 | **0** | Cadrage documentaire | — **terminé** |
 | **1** | Socle technique, migrations, conteneur local, cron + file | **terminé** — *Q-04, Q-05, Q-26 en dette (D-017)* |
 | **2** | Comptes, **vérification SMS**, notifications, Policies, limitation de débit, tests de refus | **terminé** — *Q-15 bloque la production, pas le développement* |
-| **3** | Parcours Trouveur, upload, suppression EXIF, doublons | Q-07, **arbitrage Q-14** |
+| **3** | Parcours Trouveur, upload, suppression EXIF, doublons | **terminé** — Q-14 tranchée (D-028) |
 | **4** | Déclaration de perte, recherche N1, **notifications de résultat** | Q-23, Q-24, Q-25 |
 | **5** | Moteur de rapprochement, seuils, métriques | Q-27 |
 | **6** | Revendication, N2/N3, paiement | **Q-13, Q-14**, Q-18 |
@@ -344,3 +358,58 @@ affichent un gabarit minimal. Les routes fonctionnent, les vues sont à écrire.
 Seul écart à une CSP pleinement stricte, dû aux attributs `style` produits par
 Blade et Tailwind. Permet l'exfiltration par CSS, pas l'exécution de code
 (`SECURITY_HEADERS.md` §5).
+
+---
+
+## 9. État du jalon 3
+
+| Livrable | Statut | Vérification |
+|---|---|---|
+| MinIO, bucket privé, URL signées | ✅ | 9 contrôles contre le service réel |
+| Modèles `FoundReport`, `ReportAttachment`, `DepositPoint` | ✅ | 13 tests |
+| Parcours Trouveur en 3 étapes, brouillon en session | ✅ | 12 tests + navigateur |
+| Compression et nettoyage EXIF client | ✅ | GPS absents avant l'envoi |
+| Envoi direct par URL pré-signée | ✅ | ticket lié à son demandeur |
+| Vérification EXIF serveur par tâche de file | ✅ | 9 tests |
+| Détection de doublons | ✅ | 8 tests |
+| Points de dépôt, dépôt présenté comme privilégié | ✅ | |
+| Policies et tests de refus | ✅ | 8 tests |
+| CSP : origine du stockage, remesure navigateur | ✅ | **0 violation** |
+| Écran 2FA et vues Fortify (Q-29, Q-30) | ✅ | 6 tests, vrais codes TOTP |
+| Mesures 3G, JS, SQL | ✅ | `PERFORMANCE.md` |
+
+**Suite :** Pint ✅ · PHPStan niveau 6, 0 erreur ✅ · **183 tests, 396
+assertions** ✅
+
+### Questions nées du jalon 3
+
+**Q-32 · Le budget JavaScript est presque entièrement consommé** ⚠️
+*Statut :* ouverte · *Jalon :* 8
+
+Livewire en variante compatible CSP pèse **96,4 ko compressés** sur un budget
+de 100 ko. Il reste ~2,6 ko. **Toute bibliothèque JavaScript supplémentaire
+fera dépasser le budget.** La CSP stricte coûte à elle seule +13,5 ko par
+rapport à la variante standard (D-026). À réexaminer si un besoin réel de JS
+apparaît.
+
+**Q-33 · Le délai avant interactivité n'a pas de budget**
+*Statut :* ouverte · *Jalon :* 8
+
+Le premier affichage est tenu (1 592 ms en 3G lente) parce que le rendu initial
+est fait côté serveur. Mais les boutons du parcours Trouveur ne répondent
+qu'une fois Livewire chargé — environ deux secondes de plus en 3G lente. Le
+§9.4 ne fixe pas de budget pour ce délai ; il en mériterait un.
+
+**Q-34 · La messagerie médiatisée reste à construire**
+*Statut :* ouverte · *Jalon :* 6
+
+D-028 la retient comme repli de N3 et M-14 en décrit les contrôles. Seuls le
+modèle de données et le cadrage existent ; la messagerie elle-même, sa
+modération et la détection de numéros dans les messages sont du jalon 6.
+
+**Q-35 · Journalisation des URL signées vers les images**
+*Statut :* ouverte · *Jalon :* 6
+
+`disclosures.signed_url_generated` existe mais rien ne l'alimente : aucune URL
+signée vers une image n'est encore générée, puisque personne n'y a accès avant
+la revue administrateur.

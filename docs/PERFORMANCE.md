@@ -9,16 +9,48 @@
 
 ## 1. Poids des ressources
 
+### Jalon 1 — socle sans Livewire
+
+| Budget (§9.4) | Cible | Mesuré | Marge |
+|---|---|---|---|
+| JS initial compressé | < 100 ko | 0,02 ko | 99,98 % |
+| CSS compressé | < 50 ko | 10,25 ko | 79 % |
+
+### Jalon 3 — avec Livewire ⚠️ **la marge a disparu**
+
 | Budget (§9.4) | Cible | **Mesuré** | Marge |
 |---|---|---|---|
-| JS initial compressé | < 100 ko | **0,02 ko** | 99,98 % |
-| CSS compressé | < 50 ko | **10,25 ko** | 79 % |
+| CSS compressé | < 50 ko | **4,6 ko** | 91 % |
+| **JS initial compressé** | **< 100 ko** | **≈ 97,4 ko** | **≈ 2,6 %** |
 
-CSS non compressé : 42,10 ko. JS non compressé : ~0 ko.
+Détail du JS, mesuré sur les fichiers réellement servis :
 
-Ces valeurs correspondent au socle du jalon 1 : elles augmenteront avec
-Livewire et Alpine aux jalons suivants et devront être remesurées à chaque
-jalon. La marge actuelle est confortable, elle n'est pas acquise.
+| Fichier | Brut | **Compressé** |
+|---|---:|---:|
+| `livewire.csp.min.js` (production) | 298,7 ko | **96,4 ko** |
+| `app.js` (notre code) | 1,8 ko | **1,0 ko** |
+| **Total** | 300,5 ko | **≈ 97,4 ko** |
+
+> **Le budget JavaScript est désormais consommé presque entièrement par
+> Livewire.** Il reste environ 2,6 ko compressés de marge. Toute bibliothèque
+> JavaScript supplémentaire le ferait dépasser.
+
+**Ce que coûte la CSP stricte, chiffré.** La variante compatible CSP est plus
+lourde que la variante standard : **96,4 ko contre 82,9 ko compressés**, soit
+**+13,5 ko** — environ 13 % du budget total. C'est le prix de D-026, et il
+était jusqu'ici inconnu.
+
+**Piège de mesure à connaître.** En développement (`APP_DEBUG=true`), Livewire
+sert une variante **non minifiée de 695 ko**. Une mesure prise dans cet état
+laisse croire à un dépassement massif du budget alors que la production sert
+298 ko, compressés par Caddy. La distinction est faite par `config('app.debug')`
+dans Livewire, et la mesure ci-dessus a été prise `APP_DEBUG=false`.
+
+### Le CSS a baissé, et ce n'est pas une régression
+
+10,25 → 4,6 ko compressés, parce que la page `welcome` de Laravel, qui portait
+des centaines de classes utilitaires inutilisées, a été remplacée par la vraie
+page d'accueil.
 
 ### 1.1 Aucune police téléchargée — décision d'exigence n°3
 
@@ -44,12 +76,22 @@ formelle est définie** — le changement ne toucherait qu'un jeton dans
 processeur par le protocole DevTools, préréglages Chrome. Le processeur est
 bridé d'un facteur 4 pour représenter un mobile modeste.
 
-| Condition | **FCP mesuré** | Budget | Verdict |
-|---|---:|---:|---|
-| **3G lente** (400 kb/s, 400 ms de latence) + CPU ÷ 4 | **1 416 ms** | 2 500 ms | ✅ **TENU** |
-| **3G rapide** (1,6 Mb/s, 300 ms de latence) + CPU ÷ 4 | **824 ms** | 2 500 ms | ✅ **TENU** |
+| Page | Condition | **FCP mesuré** | Poids | Verdict |
+|---|---|---:|---:|---|
+| Accueil | 3G lente + CPU ÷ 4 | **1 344 ms** | 28,7 ko | ✅ **TENU** |
+| Accueil | 3G rapide + CPU ÷ 4 | **824 ms** | 26,4 ko | ✅ **TENU** |
+| **Parcours Trouveur** | 3G lente + CPU ÷ 4 | **1 592 ms** | (voir §1) | ✅ **TENU** |
 
-Poids transféré : **26,4 ko** pour la page complète.
+> **Le premier affichage n'est pas l'interactivité.** Le parcours Trouveur
+> peint tôt parce que le rendu initial est fait côté serveur, mais ses boutons
+> ne répondent qu'une fois Livewire chargé. En 3G lente, 96 ko compressés
+> représentent environ deux secondes supplémentaires. Le budget mesuré ici est
+> celui de la §9.4 ; le délai avant interactivité mériterait un budget propre,
+> que le cahier des charges ne fixe pas.
+
+**Deuxième piège de mesure.** Une première série donnait 100 ms de FCP en 3G
+lente : les ressources venaient du cache, la connexion préalable ayant été
+faite sans bridage. Les valeurs ci-dessus sont prises **cache vidé**.
 
 > **Erreur corrigée dans la mesure elle-même.** La première version du script
 > relevait un FCP nul et concluait pourtant « budget tenu » — en JavaScript,

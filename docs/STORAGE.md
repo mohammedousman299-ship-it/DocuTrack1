@@ -63,12 +63,40 @@ d'aucun arbitrage :
 
 | Élément | État |
 |---|---|
-| MinIO dans `docker-compose`, bucket privé sans accès anonyme | ✅ |
-| `FILESYSTEM_DISK=s3` par défaut, jamais `local` | ✅ |
+| MinIO dans `docker-compose`, bucket privé sans accès anonyme | ✅ vérifié — 403 en anonyme |
+| `FILESYSTEM_DISK=s3` par défaut, jamais `local` | ✅ verrouillé par test |
 | Table `report_attachments` : références seulement, jamais de binaire | ✅ |
 | Colonne `exif_stripped_at` comme preuve de traitement | ✅ |
-| Upload direct par URL pré-signée | **À FAIRE** — jalon 3 |
-| Suppression EXIF serveur | **À FAIRE** — jalon 3 |
-| Compression côté client avant upload | **À FAIRE** — jalon 3 |
-| Journalisation des URL signées | **À FAIRE** — jalon 3 |
+| **Envoi direct par URL pré-signée** | ✅ **vérifié au navigateur** |
+| **Compression et nettoyage côté client** | ✅ GPS retirés avant de quitter l'appareil |
+| **Suppression EXIF serveur** | ✅ tâche de file, vérifiée de bout en bout |
+| Journalisation des URL signées | **À FAIRE** — jalon 6, avec la divulgation N3 |
 | Choix du fournisseur de production | **NON TRANCHÉ** (§2) |
+
+## 5. Mesures du jalon 3
+
+Toutes prises contre les services réellement en marche.
+
+| Vérification | Résultat |
+|---|---|
+| Lecture, écriture, URL signée | ✅ |
+| Accès sans signature | **403** |
+| Signature falsifiée | **403** |
+| URL signée après expiration | **403** |
+| `PUT` pré-signé | **200** |
+| `PUT` sans signature | **403** |
+| Même signature réutilisée sur **une autre clé** | **403** |
+| Parcours complet au navigateur : image envoyée, sans GPS | ✅ 778 octets |
+| Pièce jointe servable **seulement** après vérification serveur | ✅ |
+
+### 5.1 Deux pièges rencontrés, à connaître
+
+**Les variables `AWS_*` sont souvent définies au niveau du système** et priment
+sur `.env`. La configuration du projet se retrouvait remplacée par des
+identifiants étrangers, et l'erreur produite — « Unable to check existence » —
+ne désignait rien d'utile. Les variables sont désormais préfixées
+`DOCUTRACK_S3_`, et un test empêche le retour des noms `AWS_`.
+
+**`upgrade-insecure-requests` cassait l'envoi direct** en réécrivant en
+`https://` l'appel vers un stockage servi en clair, sans message exploitable.
+La directive n'est plus émise qu'en HTTPS (D-033).
