@@ -404,6 +404,41 @@ Deux scénarios hors du périmètre technique mais bien réels :
 
 ---
 
+### M-14 — La mise en relation médiatisée
+
+**Acteur :** A-2, A-3 · **Bien :** B-3, B-4, B-7 · **Introduite par :** D-028
+
+> Menace **créée par une décision de conception**, et non découverte : D-009
+> écartait explicitement la messagerie interne. D-028 la réintroduit en repli
+> du dépôt, ce qui rend ses objections d'origine actives.
+
+Lorsqu'aucun dépôt n'a eu lieu, N3 devient une messagerie anonymisée entre le
+Propriétaire et le Trouveur. Trois conséquences :
+
+1. **Contournement de l'anonymat.** Rien n'empêche une partie d'écrire son
+   numéro de téléphone dans un message. La médiation devient alors nominale et
+   l'on retombe sur le contact direct que D-009 refusait.
+2. **Exposition du Trouveur.** La plateforme met deux inconnus en relation.
+   Le marché de la rançon n'est pas supprimé, il est rendu traçable.
+3. **Harcèlement et pression**, dans les deux sens.
+
+**Contrôles**
+- Accès à la messagerie **conditionné à une vérification d'identité réussie** :
+  jamais un simple candidat au rapprochement.
+- Détection de motifs ressemblant à un numéro de téléphone ou à une adresse,
+  avec mise en revue plutôt que blocage silencieux — un faux positif ne doit
+  pas empêcher une restitution.
+- Journalisation intégrale des échanges, plafond de messages par période,
+  signalement par les utilisateurs, clôture automatique à la restitution.
+- **L'interface présente le dépôt comme le mode privilégié** et la messagerie
+  comme un repli, pas comme une alternative équivalente.
+
+**Limite assumée :** aucun de ces contrôles n'empêche deux personnes décidées
+d'échanger leurs coordonnées. Ils rendent l'échange visible et sanctionnable,
+pas impossible.
+
+---
+
 ## 5. Contrôles transverses
 
 | Contrôle | Menaces couvertes |

@@ -626,6 +626,113 @@ qui sont des composants Blade et non Livewire, ne sont pas concernés.
 
 ---
 
+## D-028 — Mise en relation médiatisée en repli du dépôt
+
+**Date :** 2026-09-06 · **Statut :** Actée · **Amende D-009 · Résout C-03 et Q-14**
+
+Le dépôt auprès d'un tiers reste le mode **privilégié** et mis en avant.
+Lorsqu'aucun dépôt n'a eu lieu, N3 devient une **messagerie interne
+anonymisée** entre le Propriétaire et le Trouveur : journalisée, sans échange
+de coordonnées, avec possibilité de signalement.
+
+**Alternatives écartées :** dépôt effectif exigé avant publication (cohérent
+avec D-009 et seul modèle où N3 a toujours un contenu, mais il impose au
+Trouveur un déplacement **avant tout résultat** — or chaque obstacle réduit le
+nombre de signalements, donc l'utilité de la plateforme entière) ; statu quo
+(ne tranche rien, laisse le jalon 6 bloqué et fait croître la charge de revue).
+
+**Justification :** c'est la seule option qui fonctionne **dès aujourd'hui,
+sans partenaire**, tout en gardant le parcours Trouveur court. Elle débloque
+C-03 et le jalon 6.
+
+### Ce que cette décision réintroduit, et qu'il faut regarder en face
+
+D-009 écartait la messagerie interne pour deux raisons qui **restent valables**
+et deviennent maintenant des risques à traiter, non des objections levées :
+
+1. **Rien n'empêche les parties d'échanger des numéros en clair dans les
+   messages.** La médiation devient alors nominale et l'on retombe sur le cas
+   du contact direct, que D-009 refusait — mais en ayant coûté un module.
+2. **La plateforme met deux inconnus en relation**, ce que le point de retrait
+   tiers évitait par construction. Le marché de la rançon n'est pas supprimé,
+   il est rendu traçable.
+
+Contrôles retenus en conséquence (détaillés en M-14) : détection de motifs
+ressemblant à un numéro de téléphone, journalisation intégrale, signalement par
+les utilisateurs, plafond de messages, accès **conditionné à une vérification
+d'identité réussie** — jamais un simple candidat au rapprochement.
+
+**Le dépôt reste préférable et l'interface doit le dire.** La messagerie est un
+repli, pas une alternative équivalente.
+
+---
+
+## D-029 — EXIF : le client nettoie, le serveur vérifie
+
+**Date :** 2026-09-06 · **Statut :** Actée · **Résout une contradiction du cahier des charges**
+
+Le §3.3 interdit que l'image transite par le conteneur PHP ; le modèle de
+menaces (M-12) exige une suppression EXIF **côté serveur**. Les deux ne peuvent
+pas être vrais simultanément : si le navigateur écrit directement dans le
+stockage, le serveur ne voit jamais les octets avant enregistrement.
+
+**Résolution retenue :**
+1. le navigateur réencode l'image via un `<canvas>`, ce qui supprime les
+   métadonnées, puis l'envoie **directement** au stockage par URL pré-signée ;
+2. une **tâche de file** télécharge ensuite le fichier, vérifie l'absence
+   d'EXIF, renettoie si nécessaire, puis renseigne `exif_stripped_at` ;
+3. tant que ce champ est nul, la pièce jointe **n'est jamais servie** — la
+   règle existe déjà dans le modèle de données.
+
+**Alternatives écartées :** transit par le serveur PHP (garantie immédiate,
+mais contredit frontalement le §3.3 et se heurtera aux limites d'exécution de
+la plateforme sur des photos de téléphone récentes) ; confiance au client seul
+(un attaquant détenant une URL pré-signée y dépose ce qu'il veut sans passer
+par notre code, et le garde-fou deviendrait une fiction).
+
+**Limite assumée :** un fichier non nettoyé peut exister brièvement dans le
+stockage, entre l'envoi et le passage de la tâche. Il n'est jamais servi, mais
+il existe. La fenêtre est bornée par la fréquence du cron.
+
+---
+
+## D-030 — Photo obligatoire pour les seuls documents sensibles
+
+**Date :** 2026-09-06 · **Statut :** Actée
+
+La photo est **facultative** en général, et **obligatoire** pour les types dont
+`sensitivity = high` (carte nationale d'identité, passeport, permis de
+conduire, attestation d'identité).
+
+**Justification :** ces types imposent une revue humaine avant restitution
+(M-01). Sans image, l'administrateur n'a rien à vérifier et le contrôle
+deviendrait décoratif. Partout ailleurs, le parcours du Trouveur reste au plus
+court, conformément au §9.1.
+
+**Alternatives écartées :** toujours facultative (parcours le plus court, mais
+la revue humaine perdrait son support principal et la vérification reposerait
+entièrement sur la preuve par la connaissance — qui échoue face à un proche,
+`THREAT_MODEL.md` §6.1) ; toujours obligatoire (c'est la violation V7 relevée
+dans le prototype : elle bloque tout Trouveur sans caméra ni fichier, et chaque
+signalement perdu est un document non restitué).
+
+---
+
+## D-031 — Les écrans d'authentification inachevés sont traités au jalon 3
+
+**Date :** 2026-09-06 · **Statut :** Actée · **Résout Q-29 et Q-30**
+
+L'écran d'activation de la 2FA et les vues Fortify secondaires (mot de passe
+oublié, réinitialisation, confirmation, défi 2FA) sont complétés en fin de
+jalon 3.
+
+**Justification :** sans l'écran d'activation, aucun administrateur ne peut
+activer sa 2FA, donc **l'espace d'administration est inaccessible en
+pratique** — or le jalon 3 a besoin d'un administrateur opérationnel pour
+valider les signalements suspects (M-06) et les points de dépôt.
+
+---
+
 # Conséquences transverses
 
 Ces entrées ne sont pas des décisions mais des **effets** des décisions
