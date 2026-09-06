@@ -773,6 +773,113 @@ directive reprend tout son sens.
 
 ---
 
+## D-034 — Un seul gabarit de notification de recherche
+
+**Date :** 2026-09-06 · **Statut :** Actée · **Corrige un défaut du jalon 2**
+
+La fin d'une recherche produit **un message unique**, identique que le système
+ait trouvé quelque chose ou non : « votre recherche est terminée, connectez-vous
+pour consulter le résultat ». Le gabarit `search_no_result` est supprimé.
+
+**Origine — un défaut que j'avais introduit.** Le jalon 2 a créé deux gabarits
+distincts, `search_completed` et `search_no_result`. Or un SMS s'affiche sur un
+écran verrouillé : deux messages différents **révèlent le résultat sans
+connexion**, et rendent à un attaquant le signal binaire que la recherche
+différée (D-008) avait précisément pour but de supprimer. Il lui suffirait de
+lire ses SMS au lieu d'itérer sur le site — et les quotas comme la
+journalisation ne verraient rien passer.
+
+Le contenu minimal exigé par M-10 portait sur les données ; il porte désormais
+aussi sur **le fait même du résultat**.
+
+**Coût assumé :** un utilisateur légitime doit se connecter pour apprendre
+qu'il n'y a rien. C'est une friction réelle sur un parcours déjà différé.
+
+**Écarté :** le délai d'envoi aléatoire, qui fermerait en plus le canal
+temporel résiduel, mais allongerait l'attente de tout le monde. À reconsidérer
+si une corrélation entre délai de traitement et résultat est constatée.
+
+---
+
+## D-035 — Un seul parcours : déclarer, la recherche en découle
+
+**Date :** 2026-09-06 · **Statut :** Actée · **S'écarte de la §1.3 · Résout C-02 et Q-23**
+
+Le Propriétaire décrit son document **une seule fois**. Le système confronte
+immédiatement sa déclaration aux signalements existants **et** la conserve
+active pour les signalements futurs.
+
+**Alternatives écartées :** deux actions distinctes, conformes à la lettre de
+la §1.3 (deux saisies des mêmes informations, un enchaînement à concevoir
+malgré le différé, et une recherche qui échappe au contrôle de cohérence du
+nom) ; déclaration optionnelle cochée par défaut (créerait des déclarations que
+l'utilisateur ignore avoir faites).
+
+**Justification :**
+1. **Sécurité** — le contrôle de cohérence du nom (M-02) s'applique dès la
+   première saisie. Avec deux actions séparées, la recherche seule y échappait,
+   ce qui laissait un chemin non contrôlé vers l'information N1.
+2. **C-02 disparaît** : il n'y a plus d'« enchaînement recherche sans résultat
+   → déclaration » à concevoir, puisqu'il n'y a plus deux étapes.
+3. Une seule saisie, sur un parcours déjà rendu plus sec par le différé.
+
+**Écart assumé :** la §1.3 décrit deux fonctions distinctes et le réflexe de
+chercher avant de déclarer. L'interface doit donc **présenter l'action comme une
+recherche** — c'est ce que l'utilisateur croit faire — tout en expliquant
+qu'elle vaut aussi pour l'avenir.
+
+---
+
+## D-036 — Une incohérence de nom part en revue, sans case à cocher
+
+**Date :** 2026-09-06 · **Statut :** Actée · **Résout Q-25**
+
+Une déclaration dont le nom ne correspond pas au compte est **acceptée**, mais
+ne déclenche **aucune notification automatique** : elle part en file de revue
+administrateur.
+
+**Aucune case « je déclare pour un proche ».** Elle ne serait qu'un
+contournement en un clic : un attaquant la coche comme n'importe qui, et le
+contrôle deviendrait décoratif — or déclarer au nom d'autrui est le vecteur le
+moins coûteux du système (M-02).
+
+**Alternative écartée :** interdire toute déclaration pour autrui (contrôle
+absolu, mais exclut des cas légitimes nombreux — parent âgé, enfant, conjoint,
+personne peu à l'aise avec le numérique — dans un contexte où l'entraide
+familiale est la norme).
+
+**Coût assumé :** charge de revue supplémentaire, sur une file dont la
+soutenabilité est déjà une question ouverte (Q-27).
+
+---
+
+## D-037 — Pas de CAPTCHA : blocage progressif et revue
+
+**Date :** 2026-09-06 · **Statut :** Actée · **S'écarte de la §4.2**
+
+Au-delà du seuil de détection d'énumération, le compte est ralenti puis bloqué
+temporairement, avec alerte administrateur. Aucun CAPTCHA.
+
+**Justification, chiffrée :**
+1. Il reste **~2,6 ko** de budget JavaScript compressé (Q-32). Un CAPTCHA tiers
+   le ferait dépasser.
+2. Un CAPTCHA tiers transmet des données de navigation d'utilisateurs à un
+   service externe — sur une plateforme dont l'exigence n°1 est la protection
+   des données personnelles.
+3. Le vrai coût d'entrée reste la **vérification SMS** (D-013), qui est déjà le
+   contrôle anti-Sybil principal.
+
+**Alternative écartée :** une épreuve maison sans JavaScript, qui respecterait
+les deux contraintes mais serait bien plus facile à automatiser qu'un CAPTCHA
+professionnel — elle gênerait surtout les utilisateurs légitimes.
+
+**Écart assumé et réversible :** la §4.2 prévoit explicitement un CAPTCHA. Si
+l'énumération est constatée en production malgré le blocage progressif, la
+décision est à reprendre — et le coût en budget JavaScript devra alors être
+payé sciemment.
+
+---
+
 # Conséquences transverses
 
 Ces entrées ne sont pas des décisions mais des **effets** des décisions
