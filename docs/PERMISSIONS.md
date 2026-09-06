@@ -202,16 +202,30 @@ redéploiement.
 
 Liste à implémenter, par jalon.
 
-**Jalon 2 — comptes**
-- [ ] Anonyme sur une route protégée → 401/redirection
-- [ ] Compte sans téléphone vérifié → recherche refusée
-- [ ] Compte sans téléphone vérifié → revendication refusée
-- [ ] Utilisateur ordinaire sur une route d'administration → 404
-- [ ] Admin sans 2FA active → accès administration refusé
-- [ ] Compte bloqué → 403 sur toute action
-- [ ] Deux comptes ne peuvent pas partager un numéro de téléphone
-- [ ] Un message d'erreur d'authentification ne distingue pas compte inconnu de
+**Jalon 2 — comptes** — *réalisé*
+- [x] Anonyme sur une route protégée → redirection, et **404** sur
+      l'administration
+- [x] Compte sans téléphone vérifié → recherche refusée
+- [ ] Compte sans téléphone vérifié → revendication refusée — *reporté au
+      jalon 6, où la revendication existera ; le Gate `search.perform` couvre
+      déjà la condition de téléphone vérifié*
+- [x] Utilisateur ordinaire sur une route d'administration → 404
+- [x] Admin sans 2FA active → accès administration refusé
+- [x] Compte bloqué → refusé
+- [x] Deux comptes ne peuvent pas partager un numéro de téléphone, **même écrit
+      autrement**
+- [x] Un message d'erreur d'authentification ne distingue pas compte inconnu de
       mot de passe erroné
+
+Ajoutés en cours de route, parce que la construction les a rendus nécessaires :
+- [x] Le middleware `auth` est absent des routes d'administration : sa
+      redirection vers la connexion **confirmerait l'existence de la route**
+- [x] Administrateur fonctionnel → pouvoirs sensibles refusés, et l'inverse
+- [x] Administrateur → **recherche refusée**
+- [x] Régénération de l'identifiant de session à la connexion (fixation de
+      session)
+- [x] Le code SMS ne peut pas être consommé par un autre compte
+- [x] `unsafe-eval` ne peut pas réapparaître dans la CSP
 
 **Jalon 3 — signalements**
 - [ ] Un utilisateur ne peut pas lire le signalement d'un autre → 404

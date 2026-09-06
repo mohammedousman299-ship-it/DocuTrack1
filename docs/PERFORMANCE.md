@@ -37,24 +37,66 @@ marque n'impose une police propre. **À reconsidérer si une identité visuelle
 formelle est définie** — le changement ne toucherait qu'un jeton dans
 `resources/css/app.css`.
 
-## 2. NON MESURÉ à ce jalon
+## 2. Premier affichage utile — MESURÉ au jalon 2
+
+**Protocole.** Page d'accueil, Chromium piloté par Playwright, fenêtre de
+**360 px** (le point de départ de la conception mobile-first), bridage réseau et
+processeur par le protocole DevTools, préréglages Chrome. Le processeur est
+bridé d'un facteur 4 pour représenter un mobile modeste.
+
+| Condition | **FCP mesuré** | Budget | Verdict |
+|---|---:|---:|---|
+| **3G lente** (400 kb/s, 400 ms de latence) + CPU ÷ 4 | **1 416 ms** | 2 500 ms | ✅ **TENU** |
+| **3G rapide** (1,6 Mb/s, 300 ms de latence) + CPU ÷ 4 | **824 ms** | 2 500 ms | ✅ **TENU** |
+
+Poids transféré : **26,4 ko** pour la page complète.
+
+> **Erreur corrigée dans la mesure elle-même.** La première version du script
+> relevait un FCP nul et concluait pourtant « budget tenu » — en JavaScript,
+> `null < 2500` vaut `true`. Un FCP absent est désormais traité comme un échec
+> de mesure, jamais comme un succès. Une mesure qui ne peut pas échouer ne
+> mesure rien.
+
+**Limite de cette mesure :** elle a été prise contre le serveur de
+développement de Laravel, non contre l'image FrankenPHP. Sur un réseau 3G, le
+premier affichage est dominé par le transfert du HTML et du CSS, pas par le
+temps de traitement PHP, mais l'écart reste à confirmer au jalon 8 contre le
+conteneur réel.
+
+## 3. Requêtes SQL par page — MESURÉ au jalon 2
+
+Budget : **≤ 15 requêtes**. Mesuré avec les pilotes de **production** (session
+et cache en base), et non avec ceux de test — qui les placent en mémoire et
+ramèneraient artificiellement le compte à zéro.
+
+| Page | Requêtes |
+|---|---:|
+| Accueil | **3** |
+| Inscription | **2** |
+| Connexion | **2** |
+| Vérification du téléphone | **2** |
+| Administration | **2** |
+| Galerie `/dev/ui` | **2** |
+
+Un test automatisé verrouille le budget sur chacun de ces écrans : la dérive
+vers des dizaines de requêtes est progressive et ne se remarque qu'une fois
+installée.
+
+## 4. Reste non mesuré
 
 | Budget (§9.4) | Cible | État |
 |---|---|---|
-| Premier affichage utile en 3G simulée, mobile bas de gamme | < 2,5 s | **NON MESURÉ** — nécessite des pages réelles (jalon 2) |
-| Requêtes SQL par page | ≤ 15 | **NON MESURÉ** — nécessite des écrans réels (jalon 2) |
 | Upload reprenable, résilience réseau | — | **NON IMPLÉMENTÉ** — jalon 3 |
+| FCP contre l'image FrankenPHP | < 2,5 s | **NON MESURÉ** — jalon 8 |
+| Mesures sur les écrans de recherche et de signalement | — | jalons 3 et 4 |
 
-Ces mesures n'ont pas de sens sur un socle sans parcours utilisateur. Elles
-sont dues au jalon 2, sur la page d'accueil et le parcours de connexion.
-
-## 3. Performance de la base
+## 5. Performance de la base
 
 Voir `DATABASE.md` §2. En résumé, sur 100 000 lignes : présélection par
 trigramme 18,97 ms, par HMAC 0,03 ms, requête combinée 17,96 ms, toutes en
 *index scan*.
 
-## 4. Accessibilité — contrastes mesurés
+## 6. Accessibilité — contrastes mesurés
 
 Cible : **WCAG 2.1 niveau AA**, soit un ratio ≥ 4,5:1 pour le texte.
 
@@ -81,7 +123,7 @@ atteignent AA**, la plus faible à 5,30:1.
 > estimations, dont une fausse (8,0:1 annoncé pour `caution-700`, 6,37:1
 > réel). Elles ont été remplacées par les valeurs calculées.
 
-### 4.1 Autres dispositions d'accessibilité en place
+### 6.1 Autres dispositions d'accessibilité en place
 
 | Disposition | État |
 |---|---|
@@ -97,7 +139,7 @@ atteignent AA**, la plus faible à 5,30:1.
 | Régions live pour les mises à jour Livewire | **À FAIRE** — jalon 2 |
 | Audit d'accessibilité complet | **À FAIRE** — jalon 8 |
 
-## 5. Galerie de composants
+## 7. Galerie de composants
 
 `/dev/ui`, **hors production uniquement** — la restriction est appliquée dans
 la route, pas par convention de déploiement, et un test vérifie qu'elle renvoie
