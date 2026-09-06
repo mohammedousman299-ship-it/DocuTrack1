@@ -235,7 +235,7 @@ l'infrastructure de notification du jalon 5 au jalon 2.
 |---|---|---|
 | **0** | Cadrage documentaire | — **terminé** |
 | **1** | Socle technique, migrations, conteneur local, cron + file | **terminé** — *Q-04, Q-05, Q-26 en dette (D-017)* |
-| **2** | Comptes, **vérification SMS**, **interface `NotificationChannel` + adaptateur factice**, Policies, limitation de débit, tests de refus | Q-15 pour la production seulement |
+| **2** | Comptes, **vérification SMS**, notifications, Policies, limitation de débit, tests de refus | **terminé** — *Q-15 bloque la production, pas le développement* |
 | **3** | Parcours Trouveur, upload, suppression EXIF, doublons | Q-07, **arbitrage Q-14** |
 | **4** | Déclaration de perte, recherche N1, **notifications de résultat** | Q-23, Q-24, Q-25 |
 | **5** | Moteur de rapprochement, seuils, métriques | Q-27 |
@@ -298,3 +298,49 @@ master prompt.
 **Restent en dette de validation (D-017) :** tout ce qui dépend de Supabase et
 de Vercel — mode de connexion, pooler, extensions côté Supabase, latence,
 runtime container, Vercel Cron.
+
+---
+
+## 8. État du jalon 2
+
+| Livrable | Statut | Vérification |
+|---|---|---|
+| `User` réécrit sur le schéma réel | ✅ | 11 tests |
+| Couche notification, contenu minimal **structurel** | ✅ | 12 tests |
+| Fortify : inscription, connexion | ✅ | 9 tests |
+| Vérification e-mail par la file | ✅ | 3 tests |
+| **Vérification SMS** — contrôle anti-Sybil | ✅ | 12 tests |
+| 2FA administrateur obligatoire (TOTP) | ✅ | 11 tests |
+| Gates et middleware, **404 au lieu de 403** | ✅ | inclus ci-dessus |
+| Limitation de débit, l'IP en signal seulement | ✅ | — |
+| Page d'accueil, mobile-first 360 px | ✅ | — |
+| **CSP stricte**, mesurée au navigateur | ✅ | 7 tests + mesure Chromium |
+| Durcissement de session, CSRF | ✅ | 5 tests |
+| Mesures 3G et requêtes SQL | ✅ | `PERFORMANCE.md` §2-3 |
+
+**Suite de vérification :** Pint ✅ · PHPStan niveau 6, 0 erreur ✅ ·
+**115 tests, 265 assertions, tous passants** ✅
+
+### Questions nées du jalon 2
+
+**Q-29 · L'écran d'activation de la 2FA reste à construire**
+*Statut :* ouverte · *Jalon :* 3
+
+Le middleware exige une 2FA confirmée et redirige vers `two-factor.setup`, mais
+cet écran ne présente pas encore le code QR ni les codes de récupération. **Un
+administrateur ne peut donc pas encore activer sa 2FA par l'interface**, ce qui
+rend l'espace d'administration inaccessible en pratique. Sans conséquence tant
+qu'aucune fonction d'administration n'existe (jalon 7), mais à traiter avant.
+
+**Q-30 · Les écrans Fortify secondaires sont des ébauches**
+*Statut :* ouverte · *Jalon :* 3
+
+Mot de passe oublié, réinitialisation, confirmation de mot de passe et défi 2FA
+affichent un gabarit minimal. Les routes fonctionnent, les vues sont à écrire.
+
+**Q-31 · `style-src 'unsafe-inline'` reste dans la CSP**
+*Statut :* ouverte · *Jalon :* 8
+
+Seul écart à une CSP pleinement stricte, dû aux attributs `style` produits par
+Blade et Tailwind. Permet l'exfiltration par CSS, pas l'exécution de code
+(`SECURITY_HEADERS.md` §5).
