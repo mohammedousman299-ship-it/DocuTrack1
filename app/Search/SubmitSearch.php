@@ -10,6 +10,7 @@ use App\Enums\NameConsistency;
 use App\Models\DocumentType;
 use App\Models\LostDeclaration;
 use App\Models\User;
+use App\Search\Abuse\ApplyEnumerationResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -32,6 +33,8 @@ use InvalidArgumentException;
  */
 final class SubmitSearch
 {
+    public function __construct(private readonly ApplyEnumerationResponse $abuseResponse) {}
+
     /**
      * @param  array<string, mixed>  $input
      * @return array{declaration: LostDeclaration, search_request_id: string}
@@ -45,6 +48,17 @@ final class SubmitSearch
             // les documents d'un homonyme (§4.2).
             throw new InvalidArgumentException(
                 'La combinaison de critères est insuffisante.'
+            );
+        }
+
+        // Détection APRÈS enregistrement de la recherche précédente, avant
+        // celle-ci : un compte déjà bloqué n'atteint pas ce point, le
+        // middleware l'ayant écarté.
+        $this->abuseResponse->handle($owner);
+
+        if ($owner->fresh()?->isBlocked() === true) {
+            throw new InvalidArgumentException(
+                'Trop de recherches en peu de temps. Réessayez plus tard.'
             );
         }
 
@@ -98,6 +112,6 @@ final class SubmitSearch
             ]);
 
             return ['declaration' => $declaration, 'search_request_id' => $searchRequestId];
-        });
+        }, 3);
     }
 }

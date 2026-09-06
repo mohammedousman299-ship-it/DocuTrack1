@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Auth\PhoneVerificationController;
 use App\Http\Controllers\Reports\UploadTicketController;
+use App\Http\Controllers\Search\SearchResultsController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'home')->name('home');
@@ -79,4 +80,16 @@ Route::middleware(['auth', 'phone.verified'])->group(function (): void {
     Route::post('/signalement/piece-jointe/ticket', UploadTicketController::class)
         ->middleware('throttle:upload')
         ->name('reports.upload-ticket');
+});
+
+/*
+ | Parcours du Propriétaire (§1.3, §1.4).
+ |
+ | Une seule saisie produit une déclaration de perte ET une demande de
+ | recherche (D-035). Le quota quotidien porte sur la soumission, pas sur la
+ | consultation des résultats.
+ */
+Route::middleware(['auth', 'phone.verified'])->group(function (): void {
+    Route::view('/recherche', 'search.create')->name('search.create');
+    Route::get('/recherche/resultats', SearchResultsController::class)->name('search.results');
 });

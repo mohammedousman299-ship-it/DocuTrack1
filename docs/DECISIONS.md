@@ -880,6 +880,37 @@ payé sciemment.
 
 ---
 
+## D-038 — La détection d'énumération porte sur le volume, pas sur la proximité des numéros
+
+**Date :** 2026-09-06 · **Statut :** Constat · **Conséquence de D-007**
+
+Le §4.2 demande de détecter « les variations systématiques de numéros ». Ce
+n'est **pas réalisable** avec notre schéma, et le constat est consigné plutôt
+que contourné en silence.
+
+D-007 ne conserve les numéros que sous forme de HMAC. Un HMAC détruit par
+construction toute similarité entre entrées voisines : `AB123456` et
+`AB123457` produisent des empreintes sans rapport. Aucune mesure de proximité
+n'est possible.
+
+**Ce qui est détecté à la place :**
+- le **volume** de numéros distincts sur une fenêtre glissante ;
+- la **similarité entre noms** — mesurable, elle, puisque les noms sont
+  conservés normalisés en clair pour le rapprochement ;
+- la proportion de recherches sans résultat.
+
+**Limite assumée :** un attaquant patient qui espace ses essais sur des numéros
+est plus difficile à repérer qu'il ne le serait si les numéros étaient
+comparables. C'est le prix de D-007, qui protège en échange contre une fuite de
+base — risque plus grave et irréparable.
+
+**Ce constat ne remet pas D-007 en cause**, mais il corrige une attente : la
+§4.2 supposait des numéros comparables, ce que la décision de chiffrement a
+rendu faux. Deux exigences du cahier des charges étaient en tension sans que
+cela ait été vu au jalon 0.
+
+---
+
 # Conséquences transverses
 
 Ces entrées ne sont pas des décisions mais des **effets** des décisions

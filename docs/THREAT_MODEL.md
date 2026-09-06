@@ -254,8 +254,24 @@ des numéros de pièces.
   refusée. La combinaison retenue est documentée dans `DISCLOSURE_LEVELS.md`.
 - Plafond quotidien de recherches par compte.
 - **Recherche asynchrone** (D-008) : la boucle d'itération rapide est détruite.
-- Détection de schémas d'énumération : variations systématiques de numéros,
-  balayage alphabétique de noms, cadence régulière.
+- Détection de schémas d'énumération : **volume** de numéros distincts,
+  balayage de noms voisins, cadence régulière.
+
+> **Limite créée par notre propre conception, constatée au jalon 4.** Le §4.2
+> demandait de détecter les **variations systématiques de numéros** — un
+> attaquant essayant `AB123456`, `AB123457`, `AB123458`. C'est **impossible**
+> avec D-007 : les numéros ne sont conservés que sous forme de HMAC, dont la
+> propriété même est de détruire la similarité entre entrées voisines. Nous
+> détectons le **volume** de numéros distincts, pas leur proximité.
+>
+> Un attaquant patient qui espace ses essais est donc plus difficile à repérer
+> qu'il ne le serait si les numéros étaient comparables. C'est le prix assumé
+> de D-007, qui protège en échange contre une fuite de base — un risque bien
+> plus grave et bien moins réparable.
+>
+> Sur les **noms**, la similarité reste mesurable : ils sont conservés
+> normalisés en clair pour le rapprochement. Le balayage de noms voisins est
+> donc détectable, et c'est le signal le plus utile dont nous disposons.
 - CAPTCHA au-delà d'un seuil ; blocage progressif ; alerte administrateur.
 - **Aucun compte de résultats supérieur à 1 n'est jamais exposé** : un
   compteur est un signal d'énumération offert gratuitement.
