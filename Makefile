@@ -8,6 +8,9 @@ help: ## Affiche cette aide
 up: ## Démarre PostgreSQL et MinIO
 	docker compose up -d --wait
 
+dev-up: ## Relance les services après un redémarrage de la machine
+	./bin/dev-up.sh
+
 down: ## Arrête les services (les données sont conservées)
 	docker compose down
 

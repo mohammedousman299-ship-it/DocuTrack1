@@ -47,15 +47,26 @@ return [
             'report' => false,
         ],
 
+        /*
+         | Stockage objet des images de documents (§3.3).
+         |
+         | Les variables sont préfixées DOCUTRACK_S3_ et NON AWS_ : de
+         | nombreux environnements définissent déjà AWS_ACCESS_KEY_ID et
+         | AWS_SECRET_ACCESS_KEY au niveau du système, et ces variables
+         | d'environnement priment sur le fichier .env. La configuration du
+         | projet se retrouvait alors silencieusement remplacée par des
+         | identifiants étrangers, avec une erreur de stockage incompréhensible
+         | à l'arrivée. Un nom propre au projet supprime cette classe de bug.
+         */
         's3' => [
             'driver' => 's3',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
-            'url' => env('AWS_URL'),
-            'endpoint' => env('AWS_ENDPOINT'),
-            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'key' => env('DOCUTRACK_S3_KEY'),
+            'secret' => env('DOCUTRACK_S3_SECRET'),
+            'region' => env('DOCUTRACK_S3_REGION', 'us-east-1'),
+            'bucket' => env('DOCUTRACK_S3_BUCKET'),
+            'url' => env('DOCUTRACK_S3_URL'),
+            'endpoint' => env('DOCUTRACK_S3_ENDPOINT'),
+            'use_path_style_endpoint' => env('DOCUTRACK_S3_PATH_STYLE', false),
             'throw' => false,
             'report' => false,
         ],
