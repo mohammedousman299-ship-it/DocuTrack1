@@ -217,14 +217,27 @@ encore triviale.
 
 ### Q-27 · Charge de travail de la file de revue administrateur
 
-**Statut :** ouverte · **Jalon 5**
+**Statut :** ouverte — **désormais CHIFFRÉE** · **Jalon 5**
 
-Plusieurs décisions envoient des cas en revue humaine : incohérence de nom
-(M-02), score intermédiaire, `possible_number_typo`, doublons, Trouveurs à
-faible score, types sensibles. **Cumulées, ces files peuvent excéder ce que 2 à
-3 administrateurs peuvent traiter.** Une file ingérable équivaut à une absence
-de revue. À mesurer sur le jeu synthétique au jalon 5, avant d'être découvert en
-production.
+**Mesuré au jalon 5** (`MATCHING.md` §3.7) : au seuil retenu de 0,90,
+**725 éléments sur 2 000 paires** partent en revue, dont **300 dus au seul
+drapeau `possible_number_typo`** — 200 homonymes stricts pour 100 vraies fautes
+de frappe, que le drapeau ne peut pas distinguer (D-042).
+
+Ce que la mesure ne dit **pas** : le volume réel. La proportion dépend de la
+composition du trafic, que le jeu synthétique ne prétend pas reproduire. Le
+chiffre utile — « combien d'éléments par jour pour 2-3 administrateurs » —
+demande une estimation du volume d'usage, qui n'existe pas encore.
+
+**Ce qu'il faut retenir pour arbitrer :** la moitié de la file vient de D-007,
+et le seuil de notification est en base, réglable sans redéploiement. Si la
+file déborde, ce sont les deux leviers.
+
+**Énoncé d'origine, toujours valable.** Plusieurs décisions envoient des cas en
+revue humaine : incohérence de nom (M-02), score intermédiaire,
+`possible_number_typo`, doublons, Trouveurs à faible score, types sensibles.
+**Cumulées, ces files peuvent excéder ce que 2 à 3 administrateurs peuvent
+traiter.** Une file ingérable équivaut à une absence de revue.
 
 ---
 
@@ -253,13 +266,24 @@ budget ni tenu ni manqué.
 
 ### Q-28 · Les seuils 0,75 / 0,55 sont-ils trop élevés ?
 
-**Statut :** ouverte · **Jalon 5**
+**Statut :** RÉPONDUE au jalon 5 — ils étaient trop **bas** · **D-041**
 
-Les premières mesures (`MATCHING.md` §3.6) montrent qu'avec le trigramme seul,
-une faute d'un caractère donnait 0,667 — sous le seuil de notification. Le
-score composite de D-018 corrige ce cas précis, mais **suggère que le
-calibrage global des seuils reste à établir**, et pas seulement la formule.
-À trancher par le balayage complet du §6 de `MATCHING.md`, pas par intuition.
+La question posait le mauvais sens. Le balayage montre qu'à 0,75 le moteur
+produit **170 faux positifs sur 2 000 paires** ; à 0,90, seize. Le seuil de
+notification est porté à **0,90**.
+
+Ce qui rend ce relèvement acceptable est la **couverture** — la part des vraies
+correspondances qui aboutissent à quelque chose, notification ou revue. Elle
+vaut 0,9959 à tous les seuils : relever le seuil ne perd pas de
+correspondances, il déplace du travail vers la revue humaine.
+
+Le seuil de **revue** (0,55), lui, n'a pas été éprouvé : voir `MATCHING.md`
+§6.4.
+
+**Ce qui avait motivé la question.** Les premières mesures (`MATCHING.md`
+§3.6) montraient qu'avec le trigramme seul, une faute d'un caractère donnait
+0,667 — sous le seuil. Le score composite de D-018 corrigeait ce cas précis
+mais suggérait que le calibrage global restait à établir. Il l'est désormais.
 
 ---
 

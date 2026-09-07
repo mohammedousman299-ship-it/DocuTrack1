@@ -961,6 +961,175 @@ plutôt que de deviner (échec fermé).
 
 ---
 
+## D-040 — Le score de nom gagne un troisième terme : l'inclusion de tokens
+
+**Date :** 2026-09-07 · **Statut :** Actée · **Mesurée** · **Modifie D-018**
+
+La formule à deux termes `max(trigramme, distance d'édition)` classait une
+personne inconnue **au-dessus** d'une vraie correspondance : `compound_name`
+(même personne, un prénom omis) obtenait 0,750 de score moyen contre 0,821 pour
+`near_name_different_person` (deux personnes différentes).
+
+Un troisième terme est ajouté : `containment = 1` si tous les tokens du nom le
+plus court figurent exactement dans le plus long **et** qu'ils sont au moins
+deux.
+
+**Le seuil de deux tokens porte toute la décision.** Un seul token partagé est
+le patronyme commun — deux personnes différentes. Deux tokens exactement
+identiques sont bien plus improbables.
+
+**Mesuré :** rappel 0,679 → 0,799 à seuil 0,90, **sans un seul faux positif
+supplémentaire à aucun seuil**. Détail : `MATCHING.md` §3.1.2.
+
+**Limite :** ce résultat tient au jeu de mesure, où aucune famille négative ne
+partage deux tokens identiques sans être déjà écartée. Une population réelle
+riche en « même prénom ET même patronyme, personnes différentes » le
+remettrait en cause.
+
+---
+
+## D-041 — Seuil de notification porté de 0,75 à 0,90
+
+**Date :** 2026-09-07 · **Statut :** Actée après mesure · **Répond à Q-28**
+· **Réversible sans redéploiement**
+
+Les seuils 0,75 / 0,55 étaient **proposés, jamais mesurés**. Le balayage
+(`MATCHING.md` §3.7) les remplace par **0,90 / 0,55**.
+
+| Seuil | Précision | Rappel | Couverture | En revue |
+|---|---:|---:|---:|---:|
+| 0,75 (proposé) | 0,8668 | 0,9066 | 0,9959 | 440 |
+| **0,90 (retenu)** | **0,9839** | 0,7992 | 0,9959 | 725 |
+
+**Ce qui décide, c'est la couverture.** Elle vaut 0,9959 à tous les seuils :
+relever le seuil ne fait perdre **aucune** correspondance, il déplace du
+travail vers la revue humaine. L'arbitrage n'est donc pas « précision contre
+correspondances manquées » mais « précision contre charge de revue » — un
+compromis bien moins cruel que celui que le §6.3 redoutait.
+
+À 0,75, **170 faux positifs sur 2 000 paires**. Chacun expose une personne,
+lui fait payer pour rien et divulgue du N1 sur un tiers. À 0,90 il en reste 16.
+L'asymétrie du §6.3 — « on préfère rater une correspondance que d'en
+inventer une » — tranche seule.
+
+**Le critère d'acceptation n'est pas entièrement tenu :** précision 0,9839 ≥
+0,98 ✅, mais rappel 0,7992 < 0,85 ❌. Le rappel est manqué et je ne le
+présente pas comme atteint. Il l'est parce que le manque part en revue, pas
+dans le vide — ce que le critère de rappel, écrit avant que la couverture
+n'existe comme mesure, ne pouvait pas exprimer.
+
+**Ce que ce choix coûte :** 725 éléments en revue sur 2 000, contre 440 à 0,75.
+Si Q-27 conclut que la file n'est pas soutenable, **c'est ce seuil qu'il faut
+rouvrir en premier** — il est en base, pas dans le code, précisément pour cela.
+
+**À rouvrir aussi si vous n'êtes pas d'accord avec l'arbitrage.** Je l'ai
+tranché parce que le cas dramatique du §6.3 ne s'est pas produit ; le §6.3
+prévoyait explicitement de vous le rendre s'il s'était produit.
+
+---
+
+## D-042 — Le drapeau de faute de frappe compose la moitié de la file de revue
+
+**Date :** 2026-09-07 · **Statut :** Constat mesuré · **Conséquence de D-007**
+
+**300 éléments de la file — 54 % à seuil 0,85, invariants avec le seuil —
+viennent du seul drapeau `possible_number_typo`.** Ce sont 200 homonymes
+stricts et 100 vraies fautes de frappe, que le drapeau **ne peut pas
+distinguer** : sous HMAC, « même nom, numéros différents » ne dit rien de plus.
+
+**Pour rattraper une vraie faute de frappe, le relecteur en examine deux qui
+n'en sont pas.**
+
+D-007 avait été acceptée au prix d'une perte de rappel (D-038, §3.5). La mesure
+révèle un second coût, non anticipé au jalon 0 : **une consommation de capacité
+de revue humaine**, qui pèse directement sur Q-27.
+
+**Aucune correction proposée à ce stade.** Restaurer une comparaison approchée
+des numéros exigerait de renoncer au HMAC, donc à la protection contre une
+fuite de base — un risque plus grave et irréparable. Le constat est consigné
+pour que l'arbitrage, s'il doit être repris, le soit en connaissant les deux
+factures et non une seule.
+
+---
+
+## D-043 — Le rapprochement se fait dans les deux sens, et chaque couple une seule fois
+
+**Date :** 2026-09-07 · **Statut :** Actée · **Tient une promesse de D-035**
+
+Le rapprochement n'existait que dans **un sens** : une déclaration nouvelle
+confrontée aux signalements existants. Rien ne confrontait un **signalement
+nouveau** aux déclarations actives.
+
+La page de résultats promettait pourtant : « votre déclaration reste active,
+vous serez prévenu si quelqu'un le signale plus tard ». **Cette promesse était
+affichée sans être tenue.**
+
+Le second sens est ajouté (`MatchNewReports`, colonne `found_reports.last_matched_at`).
+
+**Le couple ne doit être examiné qu'une fois**, et la borne qui l'assure n'est
+pas une optimisation : le balayage ne considère que les déclarations
+**antérieures** au signalement ; une déclaration postérieure a déjà rencontré
+ce signalement par le chemin de la recherche.
+
+**Sans cette borne, D-034 était cassée.** Un couple traité deux fois valait
+deux notifications — « recherche terminée » puis « correspondance possible » —
+à qui avait un résultat, contre une seule aux autres. Le **nombre** de messages
+redevenait le signal binaire que le gabarit unique avait supprimé du
+**contenu** : compter ses SMS suffisait, sans ouvrir le site, hors de portée
+des quotas et de la journalisation. Le défaut a été introduit puis rattrapé par
+un test existant, et un test garantit désormais l'égalité des comptes.
+
+---
+
+## D-044 — La page de résultats ne montre que ce qui franchit le seuil de notification
+
+**Date :** 2026-09-07 · **Statut :** Actée · **Corrige une divulgation**
+
+La page de résultats affichait du niveau **N1 pour chaque candidat
+présélectionné**. Or le seuil de présélection est une similarité de 0,35,
+volontairement bas pour ne rien manquer avant le classement fin : un couple
+scoré 0,07 divulguait donc les initiales, le mois et la région d'un document
+sans aucun rapport avec la recherche.
+
+Tant que le score valait 0,500 pour tout le monde (jalon 4), la distinction
+n'existait pas. Dès que le score est réel, elle devient indispensable.
+
+**Seules les correspondances au-dessus du seuil de notification sont écrites
+dans `search_results`.** Les correspondances en revue n'y figurent pas : un
+humain ne les a pas tranchées, exactement comme une déclaration en revue ne
+produit rien (D-039).
+
+**Rien n'est écrit sous le seuil de revue.** Conserver les couples faibles
+remplirait la table de bruit et surtout constituerait une trace de « qui a
+failli correspondre à quoi » — une donnée que personne n'a demandé à produire
+et que rien ne consomme.
+
+---
+
+## D-045 — Le scoreur est construit à partir des réglages chargés, jamais par le conteneur
+
+**Date :** 2026-09-07 · **Statut :** Actée · **Corrige une panne silencieuse**
+
+`MatchScorer` dépend d'un `MatchingSetting`. Résolu par le conteneur de
+Laravel, celui-ci est un **modèle Eloquent vide** : tous les poids valent
+`null`, donc `0` une fois convertis, la somme des poids vaut 0, et **tout score
+vaut 0**.
+
+Conséquence observée : le moteur n'enregistrait plus **aucune** correspondance,
+sans lever la moindre erreur. Une panne totale du rapprochement, indiscernable
+d'une absence de résultats.
+
+Le scoreur est désormais construit dans `RecordMatches`, à partir des réglages
+effectivement passés à la méthode. **Il n'existe plus de chemin par lequel il
+puisse recevoir des réglages que personne n'a lus.**
+
+Le même raisonnement vaut pour `MatchingSetting::active()`, qui lève une
+exception plutôt que de retomber sur des valeurs par défaut : un moteur qui
+tourne sur des seuils que personne n'a choisis est pire qu'un moteur arrêté,
+car rien ne le signale.
+
+---
+
 # Conséquences transverses
 
 Ces entrées ne sont pas des décisions mais des **effets** des décisions

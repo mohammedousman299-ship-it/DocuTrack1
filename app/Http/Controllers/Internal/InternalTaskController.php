@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Internal;
 
 use App\Internal\InternalTaskRunner;
 use App\Internal\TaskBudget;
+use App\Matching\MatchNewReports;
 use App\Notifications\NotificationDispatcher;
 use App\Search\ProcessSearchRequests;
 use Illuminate\Http\JsonResponse;
@@ -64,11 +65,29 @@ final class InternalTaskController
      * (verrou, budget, idempotence) sont validés dès maintenant, parce que
      * c'est l'architecture asynchrone qui est le risque, pas l'algorithme.
      */
-    public function match(ProcessSearchRequests $searches): JsonResponse
+    public function match(ProcessSearchRequests $searches, MatchNewReports $reports): JsonResponse
     {
+        // Les DEUX sens du rapprochement, sous un même verrou et un même
+        // budget : une déclaration nouvelle contre les signalements existants,
+        // et un signalement nouveau contre les déclarations actives. Le second
+        // sens tient la promesse « vous serez prévenu si quelqu'un le signale
+        // plus tard », que le premier ne peut pas tenir seul.
         $result = $this->runner->run(
             'cron.match',
-            fn (TaskBudget $budget): array => $searches->handle($budget)
+            function (TaskBudget $budget) use ($searches, $reports): array {
+                $searchResult = $searches->handle($budget);
+                $reportResult = $reports->handle($budget);
+
+                return [
+                    'processed' => $searchResult['processed'] + $reportResult['processed'],
+                    'details' => [
+                        'searches' => $searchResult['processed'],
+                        'search_notifications' => $searchResult['details']['notified'],
+                        'reports_swept' => $reportResult['processed'],
+                        'match_notifications' => $reportResult['details']['notified'],
+                    ],
+                ];
+            }
         );
 
         return response()->json($result->toArray());

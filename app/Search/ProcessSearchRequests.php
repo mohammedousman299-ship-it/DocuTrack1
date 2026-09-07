@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Search;
 
 use App\Internal\TaskBudget;
+use App\Matching\RecordMatches;
 use App\Models\LostDeclaration;
+use App\Models\MatchingSetting;
 use App\Models\User;
 use App\Notifications\NotificationDispatcher;
 use App\Notifications\NotificationTemplate;
@@ -23,12 +25,18 @@ final class ProcessSearchRequests
 {
     public function __construct(
         private readonly SearchMatcher $matcher,
+        private readonly RecordMatches $recorder,
         private readonly NotificationDispatcher $dispatcher,
     ) {}
 
     /** @return array{processed: int, details: array<string, int>} */
     public function handle(TaskBudget $budget, int $limit = 50): array
     {
+        // Chargés UNE FOIS pour le lot : les seuils ne doivent pas changer
+        // en cours de traitement, sans quoi deux demandes du même lot seraient
+        // jugées selon des règles différentes.
+        $settings = MatchingSetting::active();
+
         $pending = DB::table('search_requests')
             ->where('status', 'queued')
             ->orderBy('created_at')
@@ -64,16 +72,31 @@ final class ProcessSearchRequests
             }
 
             $candidates = $this->matcher->candidatesFor($declaration);
+            $matches = $this->recorder->handle($declaration, $candidates, $settings);
 
-            DB::transaction(function () use ($row, $candidates, &$notified): void {
-                foreach ($candidates as $candidate) {
+            // ------------------------------------------------------------
+            // SEULES les correspondances au-dessus du seuil de notification
+            // sont montrées à l'utilisateur.
+            //
+            // Jusqu'ici, la page de résultats affichait du niveau N1 pour
+            // CHAQUE candidat présélectionné — présélection dont le seuil de
+            // similarité est 0,35, volontairement bas pour ne rien manquer.
+            // Un couple scoré 0,07 divulguait donc les initiales, le mois et
+            // la région d'un document sans rapport.
+            //
+            // Les correspondances en revue n'y figurent pas non plus : un
+            // humain ne les a pas encore tranchées, exactement comme une
+            // déclaration en revue ne produit rien (D-039).
+            // ------------------------------------------------------------
+            $shown = $matches->where('status', 'candidate');
+
+            DB::transaction(function () use ($row, $shown, &$notified): void {
+                foreach ($shown as $match) {
                     DB::table('search_results')->insertOrIgnore([
                         'id' => (string) Str::uuid(),
                         'search_request_id' => $row->id,
-                        'found_report_id' => $candidate->id,
-                        // Le score fin est du jalon 5 ; à ce stade la
-                        // présélection ne classe pas, elle retient.
-                        'score' => 0.500,
+                        'found_report_id' => $match->found_report_id,
+                        'score' => $match->score,
                         'created_at' => now(),
                     ]);
                 }
@@ -83,8 +106,8 @@ final class ProcessSearchRequests
                     // Ordre de grandeur seulement : le nombre exact est un
                     // signal d'énumération (M-07).
                     'result_count_bucket' => match (true) {
-                        $candidates->isEmpty() => 'none',
-                        $candidates->count() === 1 => 'one',
+                        $shown->isEmpty() => 'none',
+                        $shown->count() === 1 => 'one',
                         default => 'several',
                     },
                     'processed_at' => now(),

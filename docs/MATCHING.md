@@ -168,6 +168,65 @@ d'édition normalisée est généreuse — deux noms brefs réellement différen
 peuvent obtenir un score élevé. Une longueur minimale, ou une pondération par
 la longueur, sera peut-être nécessaire.
 
+#### 3.1.2 Troisième terme : inclusion de tokens — AJOUTÉ après mesure au jalon 5
+
+La formule à deux termes classait un **inconnu au-dessus d'une vraie
+correspondance**. Mesuré : la famille `compound_name` — même personne, un côté
+omettant un prénom — obtenait 0,750 de score moyen, tandis que
+`near_name_different_person` — deux personnes différentes aux noms proches —
+obtenait 0,821.
+
+La cause est mécanique : la disparition d'un token entier coûte beaucoup au
+trigramme comme à la distance d'édition, bien plus que deux ou trois caractères
+modifiés. Or omettre un prénom est banal, et désigne la même personne.
+
+```
+P = max(
+      similarity(a, b),
+      1 - levenshtein(a, b) / greatest(len(a), len(b)),   -- si len ≥ 8
+      containment(a, b)                                   -- 0 ou 1
+    )
+
+containment = 1 si TOUS les tokens du nom le plus court figurent exactement
+              dans le plus long ET qu'ils sont au moins DEUX ; 0 sinon.
+```
+
+**Le seuil de deux tokens n'est pas décoratif.** Un seul token partagé est le
+cas banal du patronyme commun — deux personnes différentes, précisément ce que
+la famille `shared_token_different_person` éprouve. Deux tokens exactement
+identiques sont une coïncidence bien plus improbable. Le seuil rejoint celui de
+`NameConsistencyCheck`, qui tranche la même question sur le nom du compte.
+
+**Effet mesuré** (2 000 paires, graine 20260907) : à seuil 0,90, le rappel
+passe de 0,679 à 0,799 **sans un seul faux positif supplémentaire** — le nombre
+de faux positifs est identique à tous les seuils balayés. `compound_name` passe
+de 0/160 à 160/160 notifiées.
+
+> **Cette absence de faux positifs supplémentaires tient au jeu de mesure**, où
+> aucune famille négative ne partage deux tokens exactement identiques sans
+> être déjà écartée par ailleurs. Une population réelle comportant beaucoup de
+> paires « même patronyme ET même prénom, personnes différentes » remettrait ce
+> résultat en cause. C'est une propriété mesurée, pas démontrée.
+
+#### 3.1.3 Plancher de longueur pour la distance d'édition — MESURÉ
+
+Le §3.1.1 signalait un risque sans le chiffrer : sur des noms courts, la
+distance d'édition normalisée est généreuse. Sur un nom de 4 caractères, une
+seule lettre d'écart donne 0,75.
+
+Mesuré sur la famille `short_name_different_person` (60 paires, personnes
+différentes portant un nom court d'un seul token) :
+
+| Plancher | Score moyen | Notifiées à 0,85 | Routées en revue |
+|---|---:|---:|---:|
+| Aucun | 0,722 | 1 | 58 / 60 |
+| **8 caractères** | **0,397** | **0** | **10 / 60** |
+
+**Le gain porte surtout sur la file de revue**, pas sur la précision, qui ne
+bouge que de 0,9301 à 0,9309 à ce taux de base. Le plancher évite à 48 paires
+sur 60 d'occuper inutilement un relecteur. Il est retenu pour cette raison, et
+non pour une amélioration de précision qu'il n'apporte pas.
+
 ### 3.2 Formule
 
 ```
@@ -276,6 +335,80 @@ du §6. Le point 2 en particulier suggère que les seuils 0,75 / 0,55 sont peut-
 
 ---
 
+### 3.7 Calibrage des seuils — MESURÉ au jalon 5
+
+**Protocole.** 2 000 paires étiquetées, graine 20260907, générateur versionné
+(`app/Matching/Synthetic/`), commande `php artisan matching:calibrate`. Les
+numéros passent par le HMAC de D-007 comme en production : comparer ici des
+numéros en clair mesurerait un moteur qui n'existe pas. Scoring : 199 ms.
+
+| Seuil | Précision | Rappel | **Couverture** | F1 | Faux + | En revue |
+|---|---:|---:|---:|---:|---:|---:|
+| 0,55 | 0,7874 | 0,9139 | 0,9959 | 0,8459 | 301 | 300 |
+| 0,70 | 0,8568 | 0,9074 | 0,9959 | 0,8814 | 185 | 424 |
+| 0,75 | 0,8668 | 0,9066 | 0,9959 | 0,8863 | 170 | 440 |
+| 0,80 | 0,8955 | 0,9057 | 0,9959 | 0,9006 | 129 | 482 |
+| 0,85 | 0,9309 | 0,8828 | 0,9959 | **0,9062** | 80 | 559 |
+| **0,90** | **0,9839** | 0,7992 | 0,9959 | 0,8820 | **16** | 725 |
+| 0,95 | 1,0000 | 0,6893 | 0,9959 | 0,8161 | 0 | 875 |
+
+### 3.7.1 Le rappel dramatise le choix ; la couverture le décrit
+
+**La couverture vaut 0,9959 à tous les seuils de 0,55 à 0,95.** Sur 1 220
+vraies correspondances, 5 seulement échappent à la fois à la notification et à
+la file de revue — et ce nombre ne bouge pas quand le seuil monte.
+
+Relever le seuil ne fait donc **pas perdre de correspondances** : il déplace du
+travail de la notification automatique vers la revue humaine. Le compromis réel
+n'est pas « précision contre correspondances manquées » mais **« précision
+contre charge de revue »**.
+
+Ce constat n'a de valeur que si la file est réellement traitée. Une file
+ingérable transforme la couverture de 0,9959 en simple intention (Q-27).
+
+### 3.7.2 D'où viennent les faux positifs
+
+À 0,90, les **16 faux positifs proviennent tous** de
+`near_name_different_person`. Toutes les autres familles négatives en
+produisent **zéro** :
+
+| Famille négative | Score moyen | Faux positifs à 0,90 |
+|---|---:|---:|
+| `temporal_inconsistency` | 0,000 | 0 |
+| `neighbouring_numbers` | 0,069 | 0 |
+| `strict_homonym` | 0,357 | 0 |
+| `short_name_different_person` | 0,397 | 0 |
+| `shared_token_different_person` | 0,562 | 0 |
+| **`near_name_different_person`** | **0,820** | **16** |
+
+> **Limite de la mesure, à connaître avant d'utiliser le chiffre de précision.**
+> La précision dépend presque entièrement de la part de
+> `near_name_different_person` dans le jeu — 9 %, une valeur que **j'ai
+> choisie** et dont je n'ai aucun moyen de savoir si elle correspond à la
+> population réelle. Deux personnes différentes aux noms proches à 2-3
+> caractères près sont, dans les faits, indiscernables d'une faute de frappe.
+> Si ce cas est plus rare en réalité, la précision est meilleure que mesurée ;
+> s'il est plus fréquent, elle est pire. Le chiffre 0,9839 est **conditionnel à
+> cette hypothèse**, et ne doit pas être cité sans elle.
+
+### 3.7.3 Composition de la file de revue — la vraie facture de D-007
+
+| Seuil | Routées par le **drapeau** `possible_number_typo` | Routées par le **score** |
+|---|---:|---:|
+| 0,85 | **300** | 259 |
+| 0,90 | **300** | 425 |
+
+**300 éléments, invariants avec le seuil, viennent du seul drapeau de faute de
+frappe sur le numéro** — 54 % de la file à 0,85. Ce sont 200 homonymes stricts
+(personnes différentes, même nom, numéros différents) et 100 vraies fautes de
+frappe. **Le drapeau ne peut pas les distinguer** : sous HMAC, « même nom,
+numéros différents » ne dit rien de plus.
+
+Autrement dit : **pour rattraper une vraie faute de frappe, le relecteur en
+examine deux qui n'en sont pas.** D-007 ne coûte donc pas seulement du rappel
+(§3.5), il coûte de la capacité de revue humaine — un coût qui n'avait pas été
+anticipé au jalon 0 et qui pèse directement sur Q-27.
+
 ## 4. Exécution
 
 ### 4.1 Présélection indexée
@@ -358,8 +491,17 @@ même à titre d'exemple** — c'est précisément l'erreur relevée dans le pro
 (`AUDIT_PROTOTYPE.md` V1). Les numéros sont générés dans l'espace des formats
 plausibles, sans prétendre reproduire un format officiel réel.
 
-Cible : **~2 000 paires étiquetées** (`match` / `no_match`), réparties sur les
-familles suivantes.
+Cible : **~2 000 paires étiquetées** (`match` / `no_match`).
+
+> **Le tableau ci-dessous est celui du jalon 0. Il a été RÉVISÉ au jalon 5** —
+> voir `app/Matching/Synthetic/DatasetGenerator.php`, dont l'en-tête porte la
+> répartition en vigueur. Ses trois familles négatives portaient toutes un
+> numéro **des deux côtés**, ce qui plafonne le score à 0,40 par arithmétique
+> (§3.5) : aucun faux positif n'était possible et la précision mesurée valait
+> 1,0000 sans rien mesurer. Trois familles négatives **sans numéro** ont été
+> ajoutées — `shared_token_different_person`, `near_name_different_person`,
+> `short_name_different_person` — car c'est le seul cas où le nom porte seul la
+> décision, et donc le seul où le moteur peut réellement se tromper.
 
 | Famille | Part visée | Ce qu'elle teste |
 |---|---:|---|
@@ -404,15 +546,27 @@ reprendre ensemble.
 
 ### 6.4 Ce qui reste à mesurer
 
-Aucune valeur de ce document n'a été mesurée. À produire au jalon 5 :
+Produit au jalon 5 :
 
-- [ ] Génération du jeu synthétique et vérification de sa distribution
-- [ ] `EXPLAIN` sur 100 000 lignes (jalon 1)
-- [ ] Balayage des seuils, tableau de résultats
-- [ ] Décision finale sur les seuils, consignée dans `DECISIONS.md`
-- [ ] Coût réel de D-007 en rappel : mesure sur la famille « faute de frappe
-      sur le numéro »
-- [ ] Temps d'exécution d'un lot et dimensionnement de la fréquence du cron
+- [x] Génération du jeu synthétique et vérification de sa distribution —
+      `DatasetGeneratorTest`, 8 contrôles portant sur le jeu lui-même
+- [x] `EXPLAIN` sur 100 000 lignes — fait au jalon 1, `DATABASE.md` §2
+- [x] Balayage des seuils, tableau de résultats — §3.7
+- [x] Décision finale sur les seuils — **D-041**, seuil porté à 0,90
+- [x] Coût réel de D-007 en rappel : **0 correspondance notifiée sur 100** dans
+      la famille « faute de frappe sur le numéro » ; les 100 partent en revue.
+      Second coût découvert : **300 éléments de file de revue** pour 100 vraies
+      fautes rattrapées (§3.7.3, D-042)
+- [x] Temps d'exécution d'un lot : **289 ms pour 50 demandes** contre 200
+      signalements, soit **5,8 ms par demande** (`MatchingBatchTest`)
+
+Reste ouvert :
+
+- [ ] Fréquence du cron : le temps par demande est mesuré, mais le volume
+      attendu ne l'est pas — l'intervalle ne peut pas s'en déduire seul
+- [ ] Réglage du seuil de **revue** (0,55), que le balayage n'a pas éprouvé :
+      faute d'un critère pour juger de la BONNE quantité d'éléments en file, le
+      régler demande d'abord de répondre à Q-27
 
 ---
 
