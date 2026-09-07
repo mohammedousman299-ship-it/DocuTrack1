@@ -39,6 +39,15 @@ enum NotificationTemplate: string
      */
     case SearchCompleted = 'search_completed';
     case ClaimDecision = 'claim_decision';
+    /**
+     * Refus de revue d'une déclaration à nom incohérent (D-036).
+     *
+     * Il existe parce que l'inverse — ne rien envoyer — laisserait quelqu'un
+     * qui a déclaré pour un parent attendre indéfiniment une notification qui
+     * ne viendra pas. Il ne dit NI le motif du refus, NI rien du document :
+     * le motif se lit après connexion, pas sur un écran verrouillé.
+     */
+    case DeclarationRejected = 'declaration_rejected';
 
     /**
      * Paramètres autorisés — liste exhaustive et volontairement pauvre.
@@ -61,6 +70,7 @@ enum NotificationTemplate: string
             self::MatchFound => [],
             self::SearchCompleted => [],
             self::ClaimDecision => [],
+            self::DeclarationRejected => [],
         };
     }
 

@@ -228,6 +228,29 @@ production.
 
 ---
 
+### Q-36 · Quel réseau définit le budget « FCP < 2,5 s » ?
+
+**Statut :** ouverte · **Jalon 4** · **Bloque une affirmation, pas un travail**
+
+Le §9.4 fixe « FCP inférieur à 2,5 s sur réseau contraint » sans chiffrer le
+réseau. La mesure du jalon 4 (`PERFORMANCE.md` §2.3) montre que le choix décide
+du verdict, et non la qualité du code :
+
+- sous le préréglage **3G lente** de Chrome (400 kbit/s, **2 000 ms** de
+  latence), un seul aller-retour consomme 2 000 ms des 2 500 ms. La cible est
+  **hors d'atteinte par construction**, sur toutes les pages ;
+- sous **3G rapide** (562 ms de latence), toutes les pages tiennent avec une
+  marge d'environ 1 100 ms.
+
+Ce n'est donc pas une question d'optimisation : aucune réduction de poids ne
+franchit un plancher fixé par la latence. Il faut soit une latence de référence
+chiffrée, soit un budget révisé pour la 3G lente.
+
+**En attendant**, `PERFORMANCE.md` publie les deux colonnes et ne déclare le
+budget ni tenu ni manqué.
+
+---
+
 ### Q-28 · Les seuils 0,75 / 0,55 sont-ils trop élevés ?
 
 **Statut :** ouverte · **Jalon 5**

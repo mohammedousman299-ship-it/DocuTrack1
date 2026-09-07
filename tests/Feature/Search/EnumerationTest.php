@@ -8,6 +8,7 @@ use App\Models\DocumentType;
 use App\Models\User;
 use App\Search\Abuse\ApplyEnumerationResponse;
 use App\Search\Abuse\EnumerationDetector;
+use App\Search\SearchNotAllowed;
 use App\Search\SubmitSearch;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -166,6 +167,8 @@ it('ne journalise que les signaux, jamais les critères de recherche', function 
 it('refuse la recherche à un compte bloqué', function (): void {
     $user = User::factory()->create(['blocked_until' => now()->addHour()]);
 
+    // SearchNotAllowed et non InvalidArgumentException : c'est un refus
+    // attendu, que l'interface affiche, pas une erreur de programmation.
     expect(fn () => rechercher($user, ['document_number' => 'AB999999']))
-        ->toThrow(InvalidArgumentException::class);
+        ->toThrow(SearchNotAllowed::class);
 });

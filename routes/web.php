@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\DeclarationReviewController;
 use App\Http\Controllers\Auth\PhoneVerificationController;
 use App\Http\Controllers\Reports\UploadTicketController;
 use App\Http\Controllers\Search\SearchResultsController;
@@ -63,6 +64,21 @@ Route::middleware('auth')->get('/double-authentification', fn () => view('auth.t
  */
 Route::middleware(['admin.2fa'])->prefix('administration')->group(function (): void {
     Route::get('/', fn () => view('admin.dashboard'))->name('admin.dashboard');
+
+    /*
+     | File de revue des déclarations à nom incohérent (D-036).
+     |
+     | 'admin.sensitive' s'ajoute à 'admin.2fa' : la file affiche le nom du
+     | titulaire du compte ET le nom déclaré, deux données de niveau N3. Un
+     | administrateur fonctionnel n'y a pas accès, et reçoit 404 comme
+     | n'importe quel visiteur (D-014, PERMISSIONS.md §2.5).
+     */
+    Route::middleware(['admin.sensitive'])->group(function (): void {
+        Route::get('/revue-declarations', [DeclarationReviewController::class, 'index'])
+            ->name('admin.review.index');
+        Route::post('/revue-declarations/{declaration}', [DeclarationReviewController::class, 'update'])
+            ->name('admin.review.update');
+    });
 });
 
 /*

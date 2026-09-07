@@ -2,6 +2,7 @@
 
 use App\Models\DocumentType;
 use App\Search\SearchCriteria;
+use App\Search\SearchNotAllowed;
 use App\Search\SubmitSearch;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -75,11 +76,20 @@ new class extends Component
             return;
         }
 
-        $service->handle(auth()->user(), $this->criteria() + [
-            'lost_city' => $this->lostCity !== '' ? $this->lostCity : null,
-            'extra_info' => $this->extraInfo !== '' ? $this->extraInfo : null,
-            'ip' => request()->ip(),
-        ]);
+        try {
+            $service->handle(auth()->user(), $this->criteria() + [
+                'lost_city' => $this->lostCity !== '' ? $this->lostCity : null,
+                'extra_info' => $this->extraInfo !== '' ? $this->extraInfo : null,
+                'ip' => request()->ip(),
+            ]);
+        } catch (SearchNotAllowed $e) {
+            // Quota atteint ou compte temporairement bloqué : c'est un refus
+            // prévu, qui s'affiche. Le laisser remonter donnerait une page 500,
+            // sans expliquer ni proposer de suite (« aucune impasse », §9.1).
+            $this->addError('documentTypeId', $e->getMessage());
+
+            return;
+        }
 
         $this->submitted = true;
     }

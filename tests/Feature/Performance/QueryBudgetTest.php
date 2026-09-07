@@ -2,7 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Enums\AdminRole;
+use App\Internal\TaskBudget;
+use App\Models\DocumentType;
+use App\Models\FoundReport;
 use App\Models\User;
+use App\Search\ProcessSearchRequests;
+use App\Search\SubmitSearch;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -69,6 +75,86 @@ it('respecte le budget sur le tableau de bord d’administration', function (): 
 
     $count = comptezLesRequetes(
         fn () => $this->actingAs($admin)->get('/administration')->assertOk()
+    );
+
+    expect($count)->toBeLessThanOrEqual(BUDGET);
+});
+
+/*
+ |------------------------------------------------------------------------
+ | Pages du jalon 4
+ |------------------------------------------------------------------------
+ |
+ | La page de résultats est celle qui risque le plus la dérive : elle boucle
+ | sur les recherches d'un compte, et chaque tour peut coûter des requêtes.
+ | Le test la charge avec PLUSIEURS recherches, faute de quoi il passerait
+ | tout en laissant un N+1 intact.
+ */
+
+it('respecte le budget sur le formulaire de recherche', function (): void {
+    $user = User::factory()->create();
+
+    DocumentType::firstOrCreate(
+        ['code' => 'budget'],
+        ['label_fr' => 'Type', 'label_en' => 'Type', 'sensitivity' => 'standard', 'retention_days' => 180]
+    );
+
+    $count = comptezLesRequetes(fn () => $this->actingAs($user)->get('/recherche')->assertOk());
+
+    expect($count)->toBeLessThanOrEqual(BUDGET);
+});
+
+it('respecte le budget sur les résultats, quel que soit le nombre de recherches', function (): void {
+    $user = User::factory()->create(['full_name' => 'Miro Olanda']);
+
+    $type = DocumentType::firstOrCreate(
+        ['code' => 'budget'],
+        ['label_fr' => 'Type', 'label_en' => 'Type', 'sensitivity' => 'standard', 'retention_days' => 180]
+    );
+
+    config(['docutrack.limits.searches_per_day' => 50]);
+
+    for ($i = 0; $i < 6; $i++) {
+        FoundReport::factory()->create([
+            'document_type_id' => $type->id,
+            'owner_name' => 'Miro Olanda',
+            'status' => 'active',
+        ]);
+
+        app(SubmitSearch::class)->handle($user, [
+            'document_type_id' => $type->id,
+            'owner_name' => 'Miro Olanda',
+            'lost_region' => 'Centre',
+        ]);
+    }
+
+    app(ProcessSearchRequests::class)->handle(new TaskBudget(10));
+
+    $count = comptezLesRequetes(fn () => $this->actingAs($user)->get('/recherche/resultats')->assertOk());
+
+    expect($count)->toBeLessThanOrEqual(BUDGET);
+});
+
+it('respecte le budget sur la file de revue', function (): void {
+    $reviewer = User::factory()->admin(AdminRole::Sensitive)->create();
+
+    $type = DocumentType::firstOrCreate(
+        ['code' => 'budget'],
+        ['label_fr' => 'Type', 'label_en' => 'Type', 'sensitivity' => 'standard', 'retention_days' => 180]
+    );
+
+    for ($i = 0; $i < 6; $i++) {
+        $user = User::factory()->create(['full_name' => 'Miro Olanda '.$i]);
+
+        app(SubmitSearch::class)->handle($user, [
+            'document_type_id' => $type->id,
+            'owner_name' => 'Yolena Bassim',
+            'lost_region' => 'Centre',
+        ]);
+    }
+
+    $count = comptezLesRequetes(
+        fn () => $this->actingAs($reviewer)->get('/administration/revue-declarations')->assertOk()
     );
 
     expect($count)->toBeLessThanOrEqual(BUDGET);

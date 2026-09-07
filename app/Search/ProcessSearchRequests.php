@@ -43,15 +43,27 @@ final class ProcessSearchRequests
                 break;
             }
 
-            $declaration = LostDeclaration::query()
-                ->where('user_id', $row->user_id)
-                ->where('document_type_id', $row->document_type_id)
-                ->latest('created_at')
-                ->first();
+            $declaration = $row->lost_declaration_id === null
+                ? null
+                : LostDeclaration::find($row->lost_declaration_id);
 
-            $candidates = $declaration === null
-                ? collect()
-                : $this->matcher->candidatesFor($declaration);
+            // Échec FERMÉ. Une demande sans déclaration identifiable ne peut
+            // pas être vérifiée : on ne sait pas si elle relève d'une
+            // déclaration en revue. Deviner la déclaration — par exemple la
+            // plus récente du même type — désigne la mauvaise dès qu'un
+            // utilisateur lance deux recherches, et contournerait la revue.
+            if ($declaration === null || ! $declaration->status->isMatchable()) {
+                DB::table('search_requests')->where('id', $row->id)->update([
+                    'status' => $declaration === null ? 'failed' : 'held',
+                    'updated_at' => now(),
+                ]);
+
+                $processed++;
+
+                continue;
+            }
+
+            $candidates = $this->matcher->candidatesFor($declaration);
 
             DB::transaction(function () use ($row, $candidates, &$notified): void {
                 foreach ($candidates as $candidate) {

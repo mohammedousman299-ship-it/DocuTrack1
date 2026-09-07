@@ -911,6 +911,56 @@ cela ait été vu au jalon 0.
 
 ---
 
+## D-039 — La mise en revue suspend le rapprochement, pas seulement la notification
+
+**Date :** 2026-09-06 · **Statut :** Actée · **Corrige une lacune de D-036**
+
+D-036 disait qu'une déclaration à nom incohérent ne déclenche « aucune
+notification automatique ». En construisant la file de revue, on a constaté que
+cette formulation ne protégeait rien : la demande de recherche associée était
+traitée comme les autres, les correspondances étaient écrites, et la page de
+résultats affichait le **niveau N1** sur le document d'un tiers. Seul le SMS
+manquait — or ce n'est pas le SMS qui divulgue.
+
+**La mise en revue suspend désormais tout le traitement.** La demande passe au
+statut `held` : ni rapprochement, ni résultat enregistré, ni notification, ni
+affichage. Rien n'existe tant qu'un humain n'a pas tranché.
+
+**Deux issues seulement**, approbation ou refus. Pas de « à revoir plus tard » :
+une file dont on peut repousser les éléments cesse d'en être une, et la
+déclaration resterait suspendue sans que personne n'ait décidé.
+
+**Le motif est obligatoire dans les deux cas.** L'exiger au seul refus rendrait
+l'approbation gratuite, donc le geste par défaut — alors que c'est
+l'approbation qui ouvre le N1 sur le document d'autrui (M-02).
+
+**La revue relève de l'administration sensible** (D-014) : la file affiche deux
+noms complets. Un administrateur fonctionnel reçoit 404, comme n'importe qui.
+
+**Le relecteur ne voit pas** le numéro du document, la ville, ni les
+correspondances éventuelles. Le premier ne sert pas la décision ; le dernier
+ferait décider en connaissant l'enjeu — précisément la pression que la revue
+existe pour écarter.
+
+**Le relecteur voit le texte libre de l'utilisateur.** D-036 avait écarté la
+case « je déclare pour un proche » parce qu'un attaquant la coche aussi. Une
+phrase écrite à la main ne prouve rien non plus, mais elle donne la seule
+matière sur laquelle un jugement puisse s'exercer : sans elle, la file demande
+de trancher sur deux noms nus.
+
+**L'auteur d'une déclaration refusée est prévenu**, par un gabarit sans aucun
+paramètre. Le silence l'aurait laissé attendre indéfiniment une notification
+qui ne viendrait jamais — inacceptable pour l'exigence n°2.
+
+**Effet de bord corrigé au passage :** `search_requests` ne portait aucun lien
+vers sa déclaration ; le traitement la retrouvait par « la plus récente de ce
+type pour cet utilisateur ». Cette heuristique désigne la mauvaise déclaration
+dès qu'un utilisateur lance deux recherches du même type. Le lien est
+désormais explicite, et une demande sans déclaration identifiable **échoue**
+plutôt que de deviner (échec fermé).
+
+---
+
 # Conséquences transverses
 
 Ces entrées ne sont pas des décisions mais des **effets** des décisions

@@ -16,4 +16,6 @@ return [
     'search_completed' => 'DocuTrack: your search has finished. Sign in to view the result.',
 
     'claim_decision' => 'DocuTrack: your request has been processed. Sign in to see the outcome.',
+
+    'declaration_rejected' => 'DocuTrack: one of your declarations was not approved. Sign in to find out why.',
 ];

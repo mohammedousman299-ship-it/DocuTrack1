@@ -11,6 +11,7 @@ use App\Models\DocumentType;
 use App\Models\LostDeclaration;
 use App\Models\User;
 use App\Search\Abuse\ApplyEnumerationResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -51,13 +52,15 @@ final class SubmitSearch
             );
         }
 
+        $this->assertWithinDailyQuota($owner);
+
         // Détection APRÈS enregistrement de la recherche précédente, avant
         // celle-ci : un compte déjà bloqué n'atteint pas ce point, le
         // middleware l'ayant écarté.
         $this->abuseResponse->handle($owner);
 
         if ($owner->fresh()?->isBlocked() === true) {
-            throw new InvalidArgumentException(
+            throw new SearchNotAllowed(
                 'Trop de recherches en peu de temps. Réessayez plus tard.'
             );
         }
@@ -99,13 +102,23 @@ final class SubmitSearch
             DB::table('search_requests')->insert([
                 'id' => $searchRequestId,
                 'user_id' => $owner->id,
+                // Lien EXPLICITE : le traitement doit savoir de quelle
+                // déclaration relève la demande, à la fois pour ne pas se
+                // tromper de déclaration et pour voir si elle est en revue.
+                'lost_declaration_id' => $declaration->id,
                 'document_type_id' => $type->id,
                 'owner_name_normalized' => $declaration->owner_name_normalized,
                 'number_hmac' => $declaration->number_hmac,
                 'region' => $input['lost_region'] ?? null,
                 'approximate_lost_on' => $input['lost_on'] ?? null,
                 'criteria_combination' => $combination->value,
-                'status' => 'queued',
+                // Une déclaration en revue ne produit RIEN tant qu'un humain
+                // n'a pas tranché : ni rapprochement, ni notification, ni
+                // affichage N1 (D-036). Sans cette attente, la mise en revue
+                // n'aurait bloqué que la notification, pas la divulgation.
+                'status' => $declaration->status === LostDeclarationStatus::PendingReview
+                    ? 'held'
+                    : 'queued',
                 'ip' => $input['ip'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -113,5 +126,37 @@ final class SubmitSearch
 
             return ['declaration' => $declaration, 'search_request_id' => $searchRequestId];
         }, 3);
+    }
+
+    /**
+     * Quota QUOTIDIEN par compte (§4.2, M-07).
+     *
+     * Compté sur `search_requests`, pas sur le cache : un vidage de cache ne
+     * doit pas remettre le compteur à zéro, et la table porte de toute façon
+     * la trace exigée par la §4.2. L'index (user_id, created_at) existe.
+     *
+     * Fenêtre GLISSANTE de 24 heures, et non journée civile : celle-ci
+     * autoriserait deux fois le quota à cheval sur minuit.
+     *
+     * Le limiteur nommé 'search' reste déclaré pour d'éventuelles routes HTTP,
+     * mais il ne suffirait pas ici : la recherche est soumise par Livewire,
+     * dont les requêtes passent toutes par la même route. Le quota appartient
+     * au domaine, pas au transport.
+     */
+    private function assertWithinDailyQuota(User $owner): void
+    {
+        $quota = (int) config('docutrack.limits.searches_per_day');
+
+        $used = DB::table('search_requests')
+            ->where('user_id', $owner->id)
+            ->where('created_at', '>=', Carbon::now()->subDay())
+            ->count();
+
+        if ($used >= $quota) {
+            throw new SearchNotAllowed(
+                'Vous avez atteint le nombre de recherches autorisé pour aujourd\'hui. '
+                .'Vos déclarations restent actives : vous serez prévenu si un signalement leur correspond.'
+            );
+        }
     }
 }

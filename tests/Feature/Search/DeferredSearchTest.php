@@ -7,6 +7,7 @@ use App\Http\Middleware\VerifyInternalSecret;
 use App\Models\DocumentType;
 use App\Models\FoundReport;
 use App\Models\User;
+use App\Search\SearchNotAllowed;
 use App\Search\SubmitSearch;
 use Illuminate\Support\Facades\DB;
 
@@ -179,4 +180,43 @@ it('ne rapproche jamais deux types de documents différents', function (): void 
     traiterLesRecherches();
 
     expect(DB::table('search_results')->count())->toBe(0);
+});
+
+it('refuse la recherche au-delà du quota quotidien', function (): void {
+    // §4.2 : quota QUOTIDIEN par compte. Il était configuré mais appliqué
+    // nulle part — le limiteur nommé 'search' ne portait sur aucune route, et
+    // n'aurait rien pu porter : Livewire soumet tout par la même URL.
+    config(['docutrack.limits.searches_per_day' => 2]);
+
+    $owner = User::factory()->create(['full_name' => 'Miro Olanda']);
+    $type = typeRecherche();
+
+    app(SubmitSearch::class)->handle($owner, criteresValides($type));
+    app(SubmitSearch::class)->handle($owner, criteresValides($type));
+
+    expect(fn () => app(SubmitSearch::class)->handle($owner, criteresValides($type)))
+        ->toThrow(SearchNotAllowed::class);
+
+    expect(DB::table('search_requests')->where('user_id', $owner->id)->count())->toBe(2);
+});
+
+it('compte le quota sur une fenêtre glissante, pas sur la journée civile', function (): void {
+    // Une journée civile autoriserait deux fois le quota à cheval sur minuit.
+    config(['docutrack.limits.searches_per_day' => 1]);
+
+    $owner = User::factory()->create(['full_name' => 'Miro Olanda']);
+    $type = typeRecherche();
+
+    app(SubmitSearch::class)->handle($owner, criteresValides($type));
+
+    // 23 heures plus tard : toujours dans la fenêtre.
+    $this->travel(23)->hours();
+    expect(fn () => app(SubmitSearch::class)->handle($owner, criteresValides($type)))
+        ->toThrow(SearchNotAllowed::class);
+
+    // 25 heures après la première : elle est sortie de la fenêtre.
+    $this->travel(2)->hours();
+    app(SubmitSearch::class)->handle($owner, criteresValides($type));
+
+    expect(DB::table('search_requests')->where('user_id', $owner->id)->count())->toBe(2);
 });

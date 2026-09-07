@@ -123,6 +123,7 @@ CNI), une **validation administrateur** est en outre obligatoire.
 | Traiter les retours d'expérience | ✅ 📝 | ✅ 📝 |
 | Voir les tableaux de bord agrégés | ✅ | ✅ |
 | Régler les seuils de rapprochement | ✅ 📝 | ✅ 📝 |
+| **Trancher une déclaration à nom incohérent** | ❌ | ✅ 👁📝 **+ motif** |
 | **Voir nom complet et numéro** | ❌ | ✅ 👁📝 **+ motif** |
 | **Voir une image de document** | ❌ | ✅ 👁📝 **+ motif**, floutée par défaut |
 | Voir les éléments de preuve d'une revendication | ❌ | ✅ 👁📝 **+ motif** |
@@ -228,20 +229,39 @@ Ajoutés en cours de route, parce que la construction les a rendus nécessaires 
 - [x] `unsafe-eval` ne peut pas réapparaître dans la CSP
 
 **Jalon 3 — signalements**
-- [ ] Un utilisateur ne peut pas lire le signalement d'un autre → 404
-- [ ] **Le Trouveur ne voit aucun statut de rapprochement de ses signalements**
-- [ ] Un utilisateur ne peut pas obtenir d'URL signée vers une image
-- [ ] Un admin fonctionnel ne peut pas voir une image
-- [ ] Un fichier sans `exif_stripped_at` n'est jamais servi
+- [x] Un utilisateur ne peut pas lire le signalement d'un autre → refusé par la
+      Policy (`ReportPolicyTest`)
+- [x] **Le Trouveur ne voit aucun statut de rapprochement de ses signalements**
+      (`FinderJourneyTest`)
+- [x] Un utilisateur ne peut pas obtenir d'URL signée vers une image — **aucun
+      utilisateur ne le peut, pas même l'auteur** (D-006, `ReportPolicyTest`)
+- [x] Un admin fonctionnel ne peut pas voir une image (`ReportPolicyTest`)
+- [x] Un fichier sans `exif_stripped_at` n'est jamais servi
+      (`ReportPolicyTest`, `AttachmentGuardTest`)
 
 **Jalon 4 — recherche**
-- [ ] Recherche par nom seul → refusée
-- [ ] Recherche sans type de document → refusée
-- [ ] Au-delà du quota → 429
-- [ ] **Test de non-fuite N1** : la réponse complète ne contient aucune
-      sentinelle (`DISCLOSURE_LEVELS.md` §5)
-- [ ] Toute recherche écrit une ligne dans `search_requests`
-- [ ] Aucune réponse n'expose un nombre de résultats supérieur à 1
+- [x] Recherche par nom seul → refusée (`SearchCriteriaTest`)
+- [x] Recherche sans type de document → refusée (`SearchCriteriaTest`)
+- [x] Au-delà du quota → refusée (`DeferredSearchTest`) — **et non 429** : la
+      recherche est soumise par Livewire, dont toutes les requêtes passent par
+      la même URL. Un limiteur de route n'aurait pas pu la borner ; le quota est
+      appliqué dans le domaine, compté sur `search_requests` et sur une fenêtre
+      glissante de 24 h
+- [x] **Test de non-fuite N1** : la réponse HTTP complète **et la charge
+      Livewire** ne contiennent aucune sentinelle (`HttpLeakTest`,
+      `DisclosureLeakTest`)
+- [x] Toute recherche écrit une ligne dans `search_requests` (`DeferredSearchTest`)
+- [x] Aucune réponse n'expose un nombre de résultats supérieur à 1 (`HttpLeakTest`)
+
+Ajoutés en cours de route, parce que la construction les a rendus nécessaires :
+- [x] Une déclaration en revue ne produit **ni rapprochement, ni notification,
+      ni affichage N1** tant qu'un humain n'a pas tranché (D-039)
+- [x] La file de revue est refusée à l'admin **fonctionnel** → 404, et non 403
+- [x] Une décision de revue sans motif suffisant est refusée, sans changer le
+      statut
+- [x] Une déclaration déjà tranchée ne peut pas l'être une seconde fois
+- [x] Le journal d'énumération enregistre les **signaux**, jamais les critères
+      de recherche
 
 **Jalon 6 — revendication et divulgation**
 - [ ] **Un Trouveur ne peut pas revendiquer son propre signalement** —

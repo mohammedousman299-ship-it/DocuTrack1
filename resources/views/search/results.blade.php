@@ -15,7 +15,20 @@
             <div class="flex flex-col gap-4">
                 @foreach ($searches as $search)
                     <x-card>
-                        @if ($search['pending'])
+                        @if ($search['held'])
+                            {{-- Déclaration à nom incohérent (D-036) : rien
+                                 n'a été rapproché, rien n'est affiché. --}}
+                            <div class="flex flex-col gap-2">
+                                <x-badge tone="caution">{{ __('search.held') }}</x-badge>
+                                <p class="text-sm text-slate-600">
+                                    Le nom que vous avez indiqué n'est pas celui de
+                                    votre compte. C'est normal si vous déclarez pour
+                                    un proche&nbsp;: une personne de DocuTrack le
+                                    vérifie avant que la recherche ne se lance. Vous
+                                    serez prévenu dans les deux cas.
+                                </p>
+                            </div>
+                        @elseif ($search['pending'])
                             <div class="flex flex-col gap-2">
                                 <x-badge tone="neutral">{{ __('search.pending') }}</x-badge>
                                 <p class="text-sm text-slate-600">

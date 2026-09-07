@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAdminTwoFactor;
 use App\Http\Middleware\EnsurePhoneVerified;
+use App\Http\Middleware\EnsureSensitiveAdmin;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\VerifyInternalSecret;
 use Illuminate\Foundation\Application;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'phone.verified' => EnsurePhoneVerified::class,
             'admin.2fa' => EnsureAdminTwoFactor::class,
+            'admin.sensitive' => EnsureSensitiveAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

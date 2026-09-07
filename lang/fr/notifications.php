@@ -25,4 +25,6 @@ return [
     'search_completed' => 'DocuTrack : votre recherche est terminée. Connectez-vous pour consulter le résultat.',
 
     'claim_decision' => 'DocuTrack : votre demande a été traitée. Connectez-vous pour en connaître le résultat.',
+
+    'declaration_rejected' => "DocuTrack : une de vos déclarations n'a pas été validée. Connectez-vous pour en connaître la raison.",
 ];
